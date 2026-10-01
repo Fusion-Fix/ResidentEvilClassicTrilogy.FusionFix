@@ -1,0 +1,53 @@
+name: Slowdown or performance problem
+description: Choose when things got slower from a previous version or a specific scene runs really poorly.
+body:
+  - type: textarea
+    id: reproduction
+    validations:
+      required: true
+    attributes:
+      label: Where does it happen
+      placeholder: 'In area X, there is an FPS drop.'
+      description: >
+        Describe where the performance drops occur.
+
+  - type: textarea
+    id: computerparts
+    validations:
+      required: true
+    attributes:
+      label: Your hardware configuration
+      placeholder: |
+            CPU: ...
+            RAM: ...
+            GPU: ...
+      description: >
+        Tell us your hardware configuration.
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Game capture
+      placeholder: '[drag files here...]'
+      description: >
+        Please include 1 or 2 screenshots or a video clip during the performance problem.
+
+  - type: input
+    id: workingversion
+    attributes:
+      label: Last working version
+      placeholder: v1.0
+      description: >
+        If it worked before, it's usually easier to narrow down a fix.
+
+  - type: checkboxes
+    attributes:
+      label: Checklist
+      options:
+        - label: "Test in the [latest build](https://github.com/Fusion-Fix/ResidentEvilClassicTrilogy.FusionFix/actions) in case it's already fixed."
+          required: true
+        - label: "[Search for other reports](https://github.com/Fusion-Fix/ResidentEvilClassicTrilogy.FusionFix/issues) of the same issue."
+          required: true
+        - label: "Include screenshots or video of the issue."
+          required: true
+        - label: "Try resetting settings or older versions and note if the issue is related."

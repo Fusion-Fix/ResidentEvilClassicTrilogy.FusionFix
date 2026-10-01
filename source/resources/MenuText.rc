@@ -1,0 +1,13 @@
+#include <winresrc.h>
+#include "MenuText.h"
+
+201 RCDATA "data/settings/RE1Classic.Game.ini"
+202 RCDATA "data/settings/RE2Classic.Game.ini"
+
+LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
+IDR_MENU_AMERICAN RCDATA "text/americanFF.txt"
+IDR_MENU_FRENCH RCDATA "text/frenchFF.txt"
+IDR_MENU_GERMAN RCDATA "text/germanFF.txt"
+IDR_MENU_ITALIAN RCDATA "text/italianFF.txt"
+IDR_MENU_JAPANESE RCDATA "text/japaneseFF.txt"
+IDR_MENU_SPANISH RCDATA "text/spanishFF.txt"

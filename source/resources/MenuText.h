@@ -1,0 +1,8 @@
+#pragma once
+
+#define IDR_MENU_AMERICAN 101
+#define IDR_MENU_FRENCH 102
+#define IDR_MENU_GERMAN 103
+#define IDR_MENU_ITALIAN 104
+#define IDR_MENU_JAPANESE 105
+#define IDR_MENU_SPANISH 106

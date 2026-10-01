@@ -1,0 +1,74 @@
+[FUSION FIX OPTIONS]
+FUSION FIX OPTIONEN
+
+[Resume]
+Fortsetzen
+
+[Wobble fix]
+Polygonzittern beheben
+
+[Widescreen]
+Breitbild
+
+[Alternate controls]
+Alternative Steuerung
+
+[Keyboard movement]
+Tastaturbewegung
+
+[Skip intro]
+Intro überspringen
+
+[Skip doors]
+Türen überspringen
+
+[Fast load]
+Schnell laden
+
+[Auto load]
+Automatisch laden
+
+[Load slot]
+Speicherplatz
+
+[Load game]
+Spiel laden
+
+[Exit game]
+Spiel beenden
+
+[Quit the game?]
+Spiel beenden?
+
+[Yes]
+Ja
+
+[No]
+Nein
+
+[On]
+Ein
+
+[Off]
+Aus
+
+[Slot]
+Platz
+
+[Latest]
+Neuester
+
+[Hold: run]
+Halten: Lauf
+
+[Toggle: run]
+Wechsel: Lauf
+
+[Hold: walk]
+Halten: Geh
+
+[Toggle: walk]
+Wechsel: Geh
+
+[Navigate / Change / Confirm / Back]
+Navigieren / Ändern / OK / Zurück

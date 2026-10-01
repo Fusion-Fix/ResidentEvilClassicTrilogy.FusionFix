@@ -1,0 +1,22 @@
+name: New feature or behavior change
+description: "Choose when something isn't broken, but you want it to be better."
+body:
+  - type: textarea
+    id: desired
+    validations:
+      required: true
+    attributes:
+      label: What should happen
+      placeholder: |
+        ResidentEvilClassicTrilogy.FusionFix should have a setting that does X.
+      description: >
+        Be specific and descriptive.
+
+  - type: checkboxes
+    attributes:
+      label: Checklist
+      options:
+        - label: "Check the [latest build](https://github.com/Fusion-Fix/ResidentEvilClassicTrilogy.FusionFix/actions) in case it's already implemented."
+          required: true
+        - label: "[Search for other requests](https://github.com/Fusion-Fix/ResidentEvilClassicTrilogy.FusionFix/issues) of the same feature."
+          required: true

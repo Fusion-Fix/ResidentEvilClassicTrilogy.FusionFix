@@ -1,0 +1,86 @@
+[
+    {
+        "id": "RE1",
+        "appId": 4249100,
+        "gogExe": "ResidentEvil.exe",
+        "languages": {
+            "english": [
+                "ResidentEvil.exe"
+            ],
+            "french": [
+                "ResidentEvil.exe"
+            ],
+            "german": [
+                "ResidentEvil.exe"
+            ],
+            "japanese": [
+                "Biohazard.exe"
+            ]
+        },
+        "project": "RE1Classic.FusionFix"
+    },
+    {
+        "id": "RE2",
+        "appId": 4249110,
+        "gogExe": "LeonU.exe",
+        "languages": {
+            "english": [
+                "LeonU.exe",
+                "ClaireU.exe"
+            ],
+            "french": [
+                "LeonF.exe",
+                "ClaireF.exe"
+            ],
+            "german": [
+                "LeonG.exe",
+                "ClaireG.exe"
+            ],
+            "italian": [
+                "LeonI.exe",
+                "ClaireI.exe"
+            ],
+            "japanese": [
+                "LeonJ.exe",
+                "ClaireJ.exe"
+            ],
+            "spanish": [
+                "LeonS.exe",
+                "ClaireS.exe"
+            ]
+        },
+        "project": "RE2Classic.FusionFix"
+    },
+    {
+        "id": "RE3",
+        "appId": 4249120,
+        "gogExe": "ResidentEvil3.exe",
+        "languages": {
+            "english": [
+                "ResidentEvil3.exe",
+                "RE3_MERCE.exe"
+            ],
+            "french": [
+                "ResidentEvil3.exe",
+                "RE3_MERCE.exe"
+            ],
+            "german": [
+                "ResidentEvil3.exe",
+                "RE3_MERCE.exe"
+            ],
+            "italian": [
+                "ResidentEvil3.exe",
+                "RE3_MERCE.exe"
+            ],
+            "japanese": [
+                "Bio3_PC.exe",
+                "Bio3_PC_Mercenaries.exe"
+            ],
+            "spanish": [
+                "ResidentEvil3.exe",
+                "RE3_MERCE.exe"
+            ]
+        },
+        "project": "RE3Nemesis.FusionFix"
+    }
+]

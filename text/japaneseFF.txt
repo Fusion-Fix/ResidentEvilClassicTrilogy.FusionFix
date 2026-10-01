@@ -1,0 +1,74 @@
+[FUSION FIX OPTIONS]
+FUSION FIX 設定
+
+[Resume]
+ゲームに戻る
+
+[Wobble fix]
+ポリゴンの揺れを修正
+
+[Widescreen]
+ワイド画面
+
+[Alternate controls]
+操作方法を変更
+
+[Keyboard movement]
+キーボードの移動
+
+[Skip intro]
+イントロをスキップ
+
+[Skip doors]
+ドア演出をスキップ
+
+[Fast load]
+高速ロード
+
+[Auto load]
+自動ロード
+
+[Load slot]
+セーブスロット
+
+[Load game]
+ゲームをロード
+
+[Exit game]
+ゲームを終了
+
+[Quit the game?]
+ゲームを終了しますか？
+
+[Yes]
+はい
+
+[No]
+いいえ
+
+[On]
+オン
+
+[Off]
+オフ
+
+[Slot]
+スロット
+
+[Latest]
+最新
+
+[Hold: run]
+押す間：走る
+
+[Toggle: run]
+切替：走る
+
+[Hold: walk]
+押す間：歩く
+
+[Toggle: walk]
+切替：歩く
+
+[Navigate / Change / Confirm / Back]
+移動／変更／決定／戻る

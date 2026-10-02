@@ -118,7 +118,7 @@ jobs:
           for (const file of files) {
             const name = path.basename(file)
             core.info(`Uploading ${name}...`)
-            await client.uploadArtifact(name, [file], 'releases', { retentionDays: 90, skipArchive: true })
+            await client.uploadArtifact(name, [file], 'releases', { retentionDays: 10, skipArchive: true })
           }
 
     - name: Upload Release

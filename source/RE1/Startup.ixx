@@ -39,13 +39,20 @@ namespace RE1Intro
 
     void Init()
     {
-        auto startup = hook::pattern("83 EC 04 53 56 57 33 DB 55 BE 01 00 00 00 89 1D ? ? ? ? 89 1D ? ? ? ? 89 35");
+        auto startup = hook::pattern("83 EC 04 53 56 57 33 DB 55 ? 01 00 00 00 89 1D ? ? ? ? 89 1D ? ? ? ? 89 ?");
         auto next = hook::pattern("68 ? ? ? ? E8 ? ? ? ? 83 C4 04 5D 5F 5E 5B 83 C4 04 C3");
         auto menu = hook::pattern("83 EC 04 56 33 F6 80 3D ? ? ? ? 00 74 ? E8 ? ? ? ? 8B F0 8B 0D ? ? ? ? F7 D1 81 E6 00 00 01 00");
         auto state = hook::pattern("A0 ? ? ? ? 85 C0 74 ? 83 F8 01 0F 84 ? ? ? ? 5E 83 C4 04 C3 33 C0 A0");
+        bool japanese = false;
+        if (startup.size() == 0)
+        {
+            startup = hook::pattern("C7 05 ? ? ? ? 01 00 00 00 53 56 33 DB 89 1D ? ? ? ? 89 1D ? ? ? ? E8 ? ? ? ? E8 ? ? ? ? 6A 01");
+            next = hook::pattern("6A 01 E8 ? ? ? ? 83 C4 04 68 ? ? ? ? E8 ? ? ? ? 83 C4 04 5E 5B C3");
+            japanese = true;
+        }
         if (startup.size() != 1 || next.size() != 1 || menu.size() != 1 || state.size() != 1) return;
-        titleTask = *next.get_first<void*>(1);
-        replace = reinterpret_cast<decltype(replace)>(injector::GetBranchDestination(next.get_first(5)).as_int());
+        titleTask = *next.get_first<void*>(japanese ? 11 : 1);
+        replace = reinterpret_cast<decltype(replace)>(injector::GetBranchDestination(next.get_first(japanese ? 15 : 5)).as_int());
         title = *state.get_first<uint8_t*>(1);
         shStartup = safetyhook::create_inline(startup.get_first(), Startup);
         shTitle = safetyhook::create_inline(menu.get_first(), Title);

@@ -19,7 +19,7 @@ namespace RE1Doors
 
     void Init()
     {
-        auto playback = hook::pattern("83 EC 20 C7 05 ? ? ? ? 00 00 00 00 53 56 57 33 F6 55 89 35 ? ? ? ? F6 05 ? ? ? ? 01 0F 84");
+        auto playback = hook::pattern("? ? ? ? ? ? ? ? ? ? ? ? ? 53 56 57 33 F6 55 89 35 ? ? ? ? F6 05 ? ? ? ? 01 0F 84");
         if (playback.size() == 1)
             shPlayback = safetyhook::create_inline(playback.get_first(), Playback);
     }

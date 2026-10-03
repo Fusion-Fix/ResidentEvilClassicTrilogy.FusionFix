@@ -22,7 +22,7 @@ extern "C" __declspec(dllexport) void InitializeASI()
     {
         PortableSettings::Init(1);
         CallbackHandler::RegisterCallbackAtGetSystemTimeAsFileTime(Init,
-            hook::pattern("80 3D ? ? ? ? 00 53 56 57 55 75 04 6A 00 EB 02 6A 01 E8"));
+            hook::pattern("? ? ? ? ? ? ? 53 56 57 55 75 04 6A 00 EB 02 6A 01 E8"));
     });
 }
 

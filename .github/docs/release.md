@@ -172,6 +172,41 @@ Missing, incompatible, or unreadable saves retain the game's normal selection or
 
 </details>
 
+## How to report crashes
+
+If the game crashes, include a **crash dump (`.dmp`)** in your [issue report](https://github.com/Fusion-Fix/ResidentEvilClassicTrilogy.FusionFix/issues). Include the game, Steam/GOG version, language, Fusion Fix version, other installed mods, and steps to reproduce it.
+
+<details>
+<summary><strong>Collect a crash dump or a freeze dump</strong></summary>
+
+**Ultimate ASI Loader (recommended)**
+
+The bundled [Ultimate ASI Loader](https://github.com/ThirteenAG/Ultimate-ASI-Loader) can generate crash dumps and logs.
+
+1. Open the folder containing the executable that actually runs the game. On Steam, this is the selected language folder inside the Steam installation, rather than the launcher folder.
+2. Create a folder named exactly `CrashDumps` beside that executable.
+3. Reproduce the crash and open `CrashDumps`.
+4. Attach the newest `.dmp` file and its `.log` file, if present. The log alone does not replace the dump.
+
+**Windows crash dumps (fallback)**
+
+If the loader does not create a dump:
+
+1. Press **Win + R**, enter `regedit`, and press Enter.
+2. Navigate to `HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\Windows Error Reporting`.
+3. Create a key named `LocalDumps`, then close Registry Editor.
+4. Reproduce the crash and find the newest game dump in `%LOCALAPPDATA%\CrashDumps`.
+
+This fallback requires administrator rights and enables crash dumps for all programs.
+
+**Hangs or freezes**
+
+Open Task Manager with **Ctrl + Shift + Esc**, find the game process, right-click it, and select **Create memory dump file** (under **Details** on some Windows versions). Use the location shown by Task Manager.
+
+Dumps can be large. If you cannot attach one to the issue, upload it to a file-sharing service and include a link accessible to the maintainers.
+
+</details>
+
 ---
 
 [Build and development guide](https://github.com/Fusion-Fix/ResidentEvilClassicTrilogy.FusionFix/blob/main/.github/docs/development.md) · [Source code](https://github.com/Fusion-Fix/ResidentEvilClassicTrilogy.FusionFix) · [GPL-3.0-or-later](https://github.com/Fusion-Fix/ResidentEvilClassicTrilogy.FusionFix/blob/main/license)

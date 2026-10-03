@@ -409,9 +409,14 @@ namespace RE2Presentation
         auto actor = hook::pattern("A1 ? ? ? ? 83 C7 04 3B B8 4C 21 00 00 75 ? 8D B0 10 3A 00 00");
         auto matrix = hook::pattern("BF ? ? ? ? F3 A5 8B 4C 24 4C 8B 70 04 8B 18 8B 69 04");
         auto font = hook::pattern("8B 44 24 08 8B 0D ? ? ? ? 53 56 83 F8 29 57 8B F1 72 06 33 C0 5F 5E 5B C3 8D 3C 40 C1 E7 02 8B 87 ? ? ? ?");
+        if (font.size() != 1)
+            font = hook::pattern("8B 44 24 08 8B 0D ? ? ? ? 53 56 83 F8 28 57 8B F1 72 06 33 C0 5F 5E 5B C3 8D 3C 40 C1 E7 02 8B 87 ? ? ? ?");
         auto state = hook::pattern("83 EC 58 56 57 8B 7C 24 64 8B F1 8B 47 04 F6 C4 20 74 12 8B 47 1C 89 86 B8 5A 00 00");
         auto frame = hook::pattern("56 8B F1 8B 86 C4 5A 00 00 85 C0 0F 85 ? ? ? ? 8B 86 CC 5F 00 00 F6 C4 02 0F 84");
         auto movie = hook::pattern("81 EC 24 04 00 00 53 55 56 57 8B F1 E8 ? ? ? ? 8B 9C 24 38 04 00 00 8B 2D");
+        // The German game wrapper replaces the first native call with a jump.
+        if (movie.size() != 1)
+            movie = hook::pattern("81 EC 24 04 00 00 53 55 56 57 8B F1 E9 ? ? ? ? 8B 9C 24 38 04 00 00 8B 2D");
         auto movieClose = hook::pattern("56 57 8B F1 E8 ? ? ? ? 8B 86 94 00 00 00 BF 00 00 00 00 83 E0 08 89 BE 98 00 00 00");
         auto text = hook::pattern("A1 ? ? ? ? 83 EC 30 85 C0 53 55 56 57 0F 84 ? ? ? ? A1 ? ? ? ? 8D 54 24 10 52 8B 80 50 5F 00 00 50 8B 08 FF 51 44");
         auto textScale = hook::pattern("A0 ? ? ? ? 8B 4C 24 28 84 C0 74 ? 81 F9 40 02 00 00");

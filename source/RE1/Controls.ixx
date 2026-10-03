@@ -23,6 +23,7 @@ namespace RE1Controls
     int16_t* yaw = nullptr;
     uint8_t* player = nullptr;
     uint32_t* control = nullptr;
+    uint16_t* taskFlags = nullptr;
     void* view = nullptr;
     Presentation::Heading heading;
     bool moving = false;
@@ -74,10 +75,15 @@ namespace RE1Controls
         const bool normal = player[133] == 0 && player[134] <= 15
             && player[134] != 10 && player[134] != 11 && player[134] != 12;
         const bool running = player[133] == 1 && player[134] >= 13 && player[134] <= 15;
-        const bool scripted = (*control & 0x10000000) || player[133] >= 2;
+        // The room loop masks native buttons while scripts own the player.
+        // Live controller input must obey that same permission before it can
+        // replace the masked packet or change the player's heading/state.
+        const bool controllable = (*taskFlags & 0x100) && !(player[3] & 0x20)
+            && player[132] == 1 && !ClassicInput::gameInputSuppressed;
+        const bool scripted = !controllable || (*control & 0x10000000) || player[133] >= 2;
         actions.Update(ClassicInput::HDState());
         const bool hd = ClassicGame::GetSettings().hdControls && !ClassicInput::gameInputSuppressed;
-        if (hd && actions.reload && player[132] == 1 && player[133] == 3 && player[134] == 19
+        if (hd && controllable && actions.reload && player[133] == 3 && player[134] == 19
             && (originalHeld & 0x100) && !(*control & 0x10000000) && AmmoSlot() >= 0
             && ((*inventory)[2 * *equipped - 1] & 0x7F) < capacities[4 * player[2]])
             Write(player, 134, uint16_t(24));
@@ -134,15 +140,17 @@ namespace RE1Controls
         auto movement = hook::pattern("66 83 3D ? ? ? ? 00 7D ? 66 81 3D ? ? ? ? FF 7F 75 ? 66 81 05 ? ? ? ? 00 08 C7 05");
         auto buttons = hook::pattern("33 C0 66 A1 ? ? ? ? 25 C0 00 00 00 3D 80 00 00 00 74 ? 3D C0 00 00 00");
         auto actor = hook::pattern("C7 05 ? ? ? ? ? ? ? ? F6 05 ? ? ? ? 01 74 ? 33 C0 A0 ? ? ? ? FF 14 85");
-        auto matrix = hook::pattern("68 ? ? ? ? 03 C2 68 ? ? ? ? C1 F8 02 8D 4C 24 60 66 89 44 24 70 51 E8");
+        auto matrix = hook::pattern("68 ? ? ? ? 03 C2 68 ? ? ? ? C1 F8 02 8D 4C 24 ? 66 89 44 24 ? 51 E8");
         auto scripted = hook::pattern("F6 05 ? ? ? ? 10 66 8B 0D ? ? ? ? 89 15 ? ? ? ? 66 A3 ? ? ? ? 66 89 0D");
-        if (movement.size() != 1 || buttons.size() != 1 || actor.size() != 1 || matrix.size() != 1 || scripted.size() != 1) return;
+        auto permission = hook::pattern("F6 05 ? ? ? ? 20 75 ? F6 05 ? ? ? ? 01 75 ? B8 00 C0 00 00 66 21 05 ? ? ? ? 66 21 05");
+        if (movement.size() != 1 || buttons.size() != 1 || actor.size() != 1 || matrix.size() != 1 || scripted.size() != 1 || permission.size() != 1) return;
         held = *buttons.get_first<uint16_t*>(4);
         pressed = held + 1;
         yaw = *movement.get_first<int16_t*>(24);
         player = *actor.get_first<uint8_t*>(6);
         view = *matrix.get_first<void*>(1);
         control = reinterpret_cast<uint32_t*>(*scripted.get_first<uint8_t*>(2) - 3);
+        taskFlags = reinterpret_cast<uint16_t*>(*permission.get_first<uint8_t*>(11) - 1);
         previousHeld = *scripted.get_first<uint16_t*>(22);
         auto reload = hook::pattern("83 EC 04 A0 ? ? ? ? 04 09 33 C9 88 44 24 00 53 33 C0 88 4C 24 07 A0 ? ? ? ? 8A 14 85");
         if (reload.size() == 1)

@@ -1,6 +1,14 @@
 name: Bug, crash or freeze/hang
 description: Choose this if something doesn't work and no other template applies.
 body:
+  - type: input
+    id: environment
+    validations:
+      required: true
+    attributes:
+      label: Game, store, language and Fusion Fix version
+      placeholder: RE1, Steam, French, v1.0
+
   - type: textarea
     id: reproduction
     validations:
@@ -32,7 +40,7 @@ body:
       label: CrashDumps and logs
       placeholder: '[drag files here...]'
       description: |
-        If the ASI loader generates crash minidumps or logs, please include them here.
+        Follow the [crash-reporting guide](https://github.com/Fusion-Fix/ResidentEvilClassicTrilogy.FusionFix#how-to-report-crashes) and attach the dump, plus logs if present. List other installed mods too.
 
   - type: input
     id: workingversion

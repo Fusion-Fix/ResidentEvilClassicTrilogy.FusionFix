@@ -39,6 +39,8 @@ namespace RE2Menu
         shWindow = safetyhook::create_inline(window.get_first(), Window);
         shMain = safetyhook::create_inline(frame.get_first(), Main);
         auto movie = hook::pattern("E8 ? ? ? ? 0F BE 05 ? ? ? ? 48 83 F8 04 0F 87 ? ? ? ? FF 24 85");
+        if (movie.size() != 1)
+            movie = hook::pattern("51 55 56 57 E8 ? ? ? ? 0F BE 05 ? ? ? ? 48 C7 44 24 0C FF FF FF FF 83 F8 04 0F 87 ? ? ? ? FF 24 85");
         if (movie.size() == 1) shMovie = safetyhook::create_inline(movie.get_first(), Movie);
         auto clock = hook::pattern("FF 15 ? ? ? ? 8D 0C 80 A3 ? ? ? ? D1 E1 89 0D ? ? ? ? A3 ? ? ? ? C3");
         if (clock.size() == 1)

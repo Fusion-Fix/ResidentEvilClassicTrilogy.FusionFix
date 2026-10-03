@@ -15,14 +15,23 @@ namespace RE2Controls
 {
     using ClassicMemory::Read;
     using ClassicMemory::Write;
-    SafetyHookInline shMovement, shInput;
+    SafetyHookInline shMovement, shInput, shLegacyMap;
     bool waitForInputRelease = false;
     uint32_t* legacyInput = nullptr;
+    uint32_t legacyPacket = 0;
+
+    int __cdecl LegacyMap(int input, int device)
+    {
+        const auto result = shLegacyMap.unsafe_ccall<int>(input, device);
+        if (device == 1) legacyPacket |= uint32_t(result);
+        return result;
+    }
 
     int __cdecl Input()
     {
+        legacyPacket = 0;
         const auto native = shInput.unsafe_ccall<int>();
-        const auto input = ClassicInput::HDPacket(2, uint16_t(native), legacyInput ? uint16_t(*legacyInput) : 0);
+        const auto input = ClassicInput::HDPacket(2, uint16_t(native), legacyInput ? uint16_t(*legacyInput) : uint16_t(legacyPacket));
         ClassicInput::gameInputSuppressed = ClassicMenu::opened || waitForInputRelease;
         if (ClassicMenu::opened) return 0;
         if (waitForInputRelease)
@@ -132,9 +141,19 @@ namespace RE2Controls
     void Init()
     {
         auto input = hook::pattern("B9 ? ? ? ? E8 ? ? ? ? A1 ? ? ? ? C7 05 ? ? ? ? 00 00 00 00 85 C0 74 21 A1 ? ? ? ? 6A 00 50 E8");
+        const bool recordedLegacy = input.size() == 1;
+        if (!recordedLegacy)
+            input = hook::pattern("B9 ? ? ? ? E8 ? ? ? ? A1 ? ? ? ? 85 C0 74 15 A1 ? ? ? ? 6A 00 50 E8 ? ? ? ? 83 C4 08 A3 ? ? ? ? 83 3D ? ? ? ? 02 7C 27");
         if (input.size() == 1)
         {
-            legacyInput = *input.get_first<uint32_t*>(0x45);
+            if (recordedLegacy) legacyInput = *input.get_first<uint32_t*>(0x45);
+            else
+            {
+                // French/Japanese do not retain the mapped legacy-pad packet.
+                // Capture device 1 after its native mapping, excluding keyboard input.
+                auto* code = input.get_first<uint8_t>();
+                shLegacyMap = safetyhook::create_inline(code + 0x20 + Read<int32_t>(code, 0x1C), LegacyMap);
+            }
             shInput = safetyhook::create_inline(input.get_first(), Input);
             ClassicMenu::pause.emplace_back([](bool) { waitForInputRelease = true; });
         }

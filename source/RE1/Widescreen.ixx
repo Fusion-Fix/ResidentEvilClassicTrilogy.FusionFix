@@ -40,6 +40,16 @@ namespace RE1Presentation
     void* inventoryTask = nullptr;
     uint8_t* camera = nullptr;
     bool roomDrawn = false;
+    // Japanese MarniSystem uses a different class and packet layout.
+    struct Layout
+    {
+        int type = 780, width = 16, height = 20, depth = 24, lens = 68;
+        int selected = 788, modeCount = 732, modes = 220;
+        int draw = 7556, surface = 8376, device = 7892;
+        int worldHandle = 5460, spriteHandle = 5480, worldMatrix = 7904, spriteMatrix = 8224;
+        int fontStride = 892;
+        bool japanese = false;
+    } layout;
     Presentation::Pan pan;
     auto lastFrame = std::chrono::steady_clock::now();
 
@@ -117,31 +127,52 @@ namespace RE1Presentation
         MCI_DGV_RECT_PARMS source{};
         if (sendMovieCommand(*movieDevice, MCI_WHERE, MCI_DGV_WHERE_SOURCE, reinterpret_cast<DWORD_PTR>(&source))) return result;
         RECT client{};
-        if (!GetClientRect(*mainWindow, &client) || source.rc.right <= source.rc.left || source.rc.bottom <= source.rc.top) return result;
+        // MCI rectangles store width/height in right/bottom, unlike Win32 RECT.
+        if (!GetClientRect(*mainWindow, &client) || client.right <= 0 || client.bottom <= 0
+            || source.rc.right <= 0 || source.rc.bottom <= 0) return result;
         const auto viewport = Presentation::Viewport::Scene(float(client.right), float(client.bottom), ClassicGame::GetSettings().maxAspectRatio);
-        const float width = float(source.rc.right - source.rc.left), height = float(source.rc.bottom - source.rc.top);
+        const float width = float(source.rc.right), height = float(source.rc.bottom);
         const float scale = ClassicGame::Enabled(ClassicGame::Option::PanAndScan)
             ? std::max(viewport.width / width, viewport.height / height)
             : std::min(viewport.width / width, viewport.height / height);
-        return MoveWindow(*movieWindow, int(std::lround(viewport.x + (viewport.width - width * scale) * 0.5f)),
-            int(std::lround(viewport.y + (viewport.height - height * scale) * 0.5f)),
-            int(std::lround(width * scale)), int(std::lround(height * scale)), TRUE);
+        const int x = int(std::lround(viewport.x + (viewport.width - width * scale) * 0.5f));
+        const int y = int(std::lround(viewport.y + (viewport.height - height * scale) * 0.5f));
+        const int scaledWidth = int(std::lround(width * scale));
+        const int scaledHeight = int(std::lround(height * scale));
+        const auto moved = MoveWindow(*movieWindow, x, y, scaledWidth, scaledHeight, TRUE);
+        MCI_DGV_PUT_PARMS destination{};
+        destination.rc = { 0, 0, scaledWidth, scaledHeight };
+        sendMovieCommand(*movieDevice, MCI_PUT, MCI_DGV_PUT_DESTINATION | MCI_DGV_RECT,
+            reinterpret_cast<DWORD_PTR>(&destination));
+        // Clip the enlarged image to the configured viewport, including the
+        // maximum aspect-ratio bars on wider monitors.
+        if (const auto region = CreateRectRgn(std::max(0, int(std::lround(viewport.x)) - x),
+            std::max(0, int(std::lround(viewport.y)) - y),
+            std::min(scaledWidth, int(std::lround(viewport.x + viewport.width)) - x),
+            std::min(scaledHeight, int(std::lround(viewport.y + viewport.height)) - y)))
+            if (!SetWindowRgn(*movieWindow, region, TRUE)) DeleteObject(region);
+        return moved;
     }
 
     void Mode(SafetyHookContext& registers)
     {
         auto* renderer = reinterpret_cast<void*>(registers.esi);
-        if (Read<int>(renderer, 780) == 5) return;
-        Write(renderer, 16, outputWidth);
-        Write(renderer, 20, outputHeight);
-        Write(renderer, 24, 16);
-        const auto selected = Read<int>(renderer, 788);
-        if (selected >= 0 && selected < Read<int>(renderer, 732))
+        if (Read<int>(renderer, layout.type) == 5) return;
+        Write(renderer, layout.width, outputWidth);
+        Write(renderer, layout.height, outputHeight);
+        Write(renderer, layout.depth, 16);
+        const auto selected = Read<int>(renderer, layout.selected);
+        if (selected >= 0 && selected < Read<int>(renderer, layout.modeCount))
         {
-            auto* mode = static_cast<uint8_t*>(renderer) + 220 + 16 * selected;
+            auto* mode = static_cast<uint8_t*>(renderer) + layout.modes + 16 * selected;
             Write(mode, 0, outputWidth);
             Write(mode, 4, outputHeight);
             Write(mode, 8, 16);
+        }
+        if (layout.japanese)
+        {
+            Write(renderer, 5712, float(outputWidth) / Read<int>(renderer, 5668));
+            Write(renderer, 5716, float(outputHeight) / Read<int>(renderer, 5672));
         }
     }
 
@@ -158,15 +189,15 @@ namespace RE1Presentation
             for (size_t column = 0; column < 3; ++column)
                 projected[row] += Read<int16_t>(view, (row * 3 + column) * 2) * point[column] / 4096.0 * (row == 1 ? -1.0 : 1.0);
         }
-        return projected[2] > 1.0 ? float(120.0 + projected[1] * Read<int>(renderer, 68) / projected[2]) : 120.0f;
+        return projected[2] > 1.0 ? float(120.0 + projected[1] * Read<int>(renderer, layout.lens) / projected[2]) : 120.0f;
     }
 
     HRESULT WINAPI Matrix(IDirect3DDevice* device, D3DMATRIXHANDLE handle, D3DMATRIX* matrix)
     {
-        if (!context.renderer || !matrix || (handle != Read<D3DMATRIXHANDLE>(context.renderer, 5460)
-            && handle != Read<D3DMATRIXHANDLE>(context.renderer, 5480)))
+        if (!context.renderer || !matrix || (handle != Read<D3DMATRIXHANDLE>(context.renderer, layout.worldHandle)
+            && handle != Read<D3DMATRIXHANDLE>(context.renderer, layout.spriteHandle)))
             return shMatrix.unsafe_stdcall<HRESULT>(device, handle, matrix);
-        const float width = float(Read<int>(context.renderer, 16)), height = float(Read<int>(context.renderer, 20));
+        const float width = float(Read<int>(context.renderer, layout.width)), height = float(Read<int>(context.renderer, layout.height));
         const auto viewport = Presentation::Viewport::Scene(width, height, ClassicGame::GetSettings().maxAspectRatio);
         const auto transform = context.full ? Presentation::Transform{ viewport.width / width, viewport.height / height, viewport.x, viewport.y }
             : context.crop ? Presentation::Transform::Crop(width, height, viewport, context.pan)
@@ -190,15 +221,18 @@ namespace RE1Presentation
         const int right = Read<int16_t>(packet, 12), bottom = Read<int16_t>(packet, 14);
         bool text = false;
         if (texture)
-            for (const int group : { 12, 14 })
+            for (const int group : { 12, 13, 14 })
+            {
+                if (group == 13 && !layout.japanese) continue;
                 for (int palette = 0; palette < 8; ++palette)
-                    text |= texture == Read<uint32_t>(fontTextures, 892 * group + 4 * palette);
+                    text |= texture == Read<uint32_t>(fontTextures, layout.fontStride * group + 4 * palette);
+            }
         const auto previous = context;
         const bool fade = !texture && left <= 0 && top <= 0 && right >= 319 && bottom >= 239;
         const bool change = fade || (text && context.crop);
-        auto* device = Read<IDirect3DDevice*>(renderer, 7892);
-        const auto projection = Read<D3DMATRIXHANDLE>(renderer, 5480);
-        auto* matrix = reinterpret_cast<D3DMATRIX*>(static_cast<uint8_t*>(renderer) + 8224);
+        auto* device = Read<IDirect3DDevice*>(renderer, layout.device);
+        const auto projection = Read<D3DMATRIXHANDLE>(renderer, layout.spriteHandle);
+        auto* matrix = reinterpret_cast<D3DMATRIX*>(static_cast<uint8_t*>(renderer) + layout.spriteMatrix);
         if (change && device)
         {
             context.crop = fade ? context.crop : false;
@@ -224,11 +258,11 @@ namespace RE1Presentation
         for (uint32_t bucket = 0; buckets && bucket < count; ++bucket)
         {
             auto* list = buckets + 12 * bucket;
-            const auto packets = std::clamp<int>(Read<int16_t>(list), 0, 8192);
-            auto* packet = Read<uint8_t*>(list, 4);
-            for (int i = 0; packet && i < packets; ++i, packet = Read<uint8_t*>(packet, 4))
+            const auto packets = std::clamp<int>(Read<int16_t>(list, layout.japanese ? 4 : 0), 0, 8192);
+            auto* packet = Read<uint8_t*>(list, layout.japanese ? 0 : 4);
+            for (int i = 0; packet && i < packets; ++i, packet = Read<uint8_t*>(packet, layout.japanese ? 0 : 4))
             {
-                if (Read<uint32_t>(packet) != 10 || Read<uint32_t>(packet, 48)
+                if ((layout.japanese ? Read<uint8_t>(packet, 4) != 0xA0 : Read<uint32_t>(packet) != 10) || Read<uint32_t>(packet, 48)
                     || Read<int16_t>(packet, 8) > 0 || Read<int16_t>(packet, 12) < 319) continue;
                 if (Read<float>(packet, 32) > 1.0f / 256.0f || Read<float>(packet, 36) > 1.0f / 256.0f
                     || Read<float>(packet, 40) > 1.0f / 256.0f) continue;
@@ -242,8 +276,8 @@ namespace RE1Presentation
 
     int __fastcall Render(void* renderer, void*, void* queue)
     {
-        auto* draw = Read<IDirectDraw*>(renderer, 7556);
-        auto* surface = Read<IDirectDrawSurface*>(renderer, 8376);
+        auto* draw = Read<IDirectDraw*>(renderer, layout.draw);
+        auto* surface = Read<IDirectDrawSurface*>(renderer, layout.surface);
         if (ClassicMenu::opened && ClassicMenu::Draw(draw, surface)) return 1;
         const auto previous = context;
         const auto now = std::chrono::steady_clock::now();
@@ -253,7 +287,7 @@ namespace RE1Presentation
         // when its UI opens and cannot identify the displayed screen.
         context = { renderer, ClassicGame::Enabled(ClassicGame::Option::PanAndScan)
             && roomDrawn && tasks[0] != titleTask && tasks[1] != inventoryTask };
-        const auto viewport = Presentation::Viewport::Scene(float(Read<int>(renderer, 16)), float(Read<int>(renderer, 20)),
+        const auto viewport = Presentation::Viewport::Scene(float(Read<int>(renderer, layout.width)), float(Read<int>(renderer, layout.height)),
             ClassicGame::GetSettings().maxAspectRatio);
         const auto cameraKey = Read<uint32_t>(camera) & 0xFFFFFF;
         if (ClassicGame::Enabled(ClassicGame::Option::PanAndScan) && Cinematic(queue))
@@ -265,17 +299,17 @@ namespace RE1Presentation
             context.pan = pan.Update(PlayerY(renderer), cameraKey, elapsed, ClassicInput::pad.right.y, viewport.SourceHeight());
         else pan.camera = UINT32_MAX;
         roomDrawn = false;
-        auto* device = Read<IDirect3DDevice*>(renderer, 7892);
+        auto* device = Read<IDirect3DDevice*>(renderer, layout.device);
         if (device && !shMatrix)
             shMatrix = safetyhook::create_inline((*reinterpret_cast<void***>(device))[16], Matrix);
         // Projection matrices survive between frames. Room changes and text
         // overlays need the current presentation even without a lens packet.
         if (device && shMatrix)
         {
-            device->SetMatrix(Read<D3DMATRIXHANDLE>(renderer, 5460),
-                reinterpret_cast<D3DMATRIX*>(static_cast<uint8_t*>(renderer) + 7904));
-            device->SetMatrix(Read<D3DMATRIXHANDLE>(renderer, 5480),
-                reinterpret_cast<D3DMATRIX*>(static_cast<uint8_t*>(renderer) + 8224));
+            device->SetMatrix(Read<D3DMATRIXHANDLE>(renderer, layout.worldHandle),
+                reinterpret_cast<D3DMATRIX*>(static_cast<uint8_t*>(renderer) + layout.worldMatrix));
+            device->SetMatrix(Read<D3DMATRIXHANDLE>(renderer, layout.spriteHandle),
+                reinterpret_cast<D3DMATRIX*>(static_cast<uint8_t*>(renderer) + layout.spriteMatrix));
         }
         if (surface)
         {
@@ -297,16 +331,31 @@ namespace RE1Presentation
         auto task = hook::pattern("8B 0D ? ? ? ? 8B 44 24 04 8B 15 ? ? ? ? 89 04 8D ? ? ? ? 66 C7 02 02 00 E9");
         auto title = hook::pattern("83 EC 08 81 25 ? ? ? ? FF FF FE FF 53 56 33 DB 53 89 1D ? ? ? ? 53 89 1D");
         auto inventoryScreen = hook::pattern("81 EC B0 01 00 00 53 56 57 33 DB 89 5C 24 1C 55 89 5C 24 24 89 5C 24 2C");
-        auto matrix = hook::pattern("68 ? ? ? ? 03 C2 68 ? ? ? ? C1 F8 02 8D 4C 24 60 66 89 44 24 70 51 E8");
+        auto matrix = hook::pattern("68 ? ? ? ? 03 C2 68 ? ? ? ? C1 F8 02 8D 4C 24 ? 66 89 44 24 ? 51 E8");
         auto sprite = hook::pattern("81 EC F4 00 00 00 53 56 57 55 83 79 3C 00 8B E9 0F 84 ? ? ? ? 8B 8C 24 08 01 00 00 8B 41 30 85 C0 75");
         auto fonts = hook::pattern("8D B9 ? ? ? ? 8B 07 85 C0 74 0F 50 E8 ? ? ? ? 83 C4 04 C7 07 00 00 00 00 8B 4D F0 83 C7 04 46 39 B1 ? ? ? ? 77 DC 8B 4D F0 81 C1 ? ? ? ? E8 ? ? ? ? 6A 01");
         auto room = hook::pattern("80 3D ? ? ? ? 03 75 37 80 3D ? ? ? ? 11 75 2E");
-        auto movie = hook::pattern("83 EC 10 53 56 57 33 F6 55 39 35 ? ? ? ? 74 67 39 35 ? ? ? ? 74 5F 8D 44 24 10 8B 0D");
+        auto movie = hook::pattern("83 EC 10 53 56 57 33 F6 55 39 35 ? ? ? ? 74 ? 39 35 ? ? ? ? 74 ? 8D 44 24 10 8B 0D");
         auto movieId = hook::pattern("8B 0D ? ? ? ? 50 6A 02 68 04 08 00 00 51 FF 15");
         auto movieFrame = hook::pattern("56 A1 ? ? ? ? 83 3D ? ? ? ? 00 57 0F 84 ? ? ? ? 85 C0 74 15 83 F8 01");
         auto moviePlay = hook::pattern("83 EC 0C 83 3D ? ? ? ? 00 74 6B 83 3D ? ? ? ? 00 74 62 A1 ? ? ? ? BA 01 00 00 01 8B 4C 24 14");
         auto movieInput = hook::pattern("66 8B 0D ? ? ? ? 66 F7 D1 66 23 C8 66 A3 ? ? ? ? A1 ? ? ? ? 66 85 0C C5 ? ? ? ? 74 13 83 3D ? ? ? ? 00 75 0A C7 05 ? ? ? ? 00 00 00 00 83 3D");
         auto flip = hook::pattern("56 FF 05 ? ? ? ? E8 ? ? ? ? FF 15 ? ? ? ? 83 3D ? ? ? ? 00 8B F0 E9");
+        if (mode.size() == 0)
+        {
+            mode = hook::pattern("8B 86 3C 13 00 00 8B 8E 84 16 00 00 50 8B 96 20 16 00 00 C7 86 8C 16 00 00 01 00 00 00 51 52 E8");
+            render = hook::pattern("83 EC 18 53 56 57 55 8B 01 8B E9 83 F8 05 74 37 83 BD 8C 14 00 00 00");
+            background = hook::pattern("53 A1 ? ? ? ? 56 57 55 33 F6 8D 14 80 8D 04 50 8D 14 C5 ? ? ? ? 8D 3C C5 00 00 00 00 8B C2 83 38 00");
+            sprite = hook::pattern("81 EC F4 00 00 00 53 56 57 55 83 B9 58 16 00 00 00 8B E9 0F 84 ? ? ? ? 8B 8C 24 08 01 00 00 8B 41 30");
+            fonts = hook::pattern("8D 9E ? ? ? ? 8B 03 85 C0 74 0F 50 E8 ? ? ? ? 83 C4 04 C7 03 00 00 00 00 83 C3 04 47 39 BE ? ? ? ? 77 DF 8D 8E ? ? ? ? E8 ? ? ? ? 6A 01 8B 45 08");
+            layout = { .type = 0, .width = 5676, .height = 5680, .depth = 5684, .lens = 5728,
+                .selected = 8, .modeCount = 6860, .modes = 5836,
+                .draw = 4924, .surface = 5508, .device = 5260,
+                .worldHandle = 4892, .spriteHandle = 4896, .worldMatrix = 5272, .spriteMatrix = 5336,
+                .fontStride = 540, .japanese = true };
+        }
+        if (movieFrame.size() == 0)
+            movieFrame = hook::pattern("81 EC 00 01 00 00 A1 ? ? ? ? 83 3D ? ? ? ? 00 56 57 0F 84 ? ? ? ? 85 C0 74 1B 83 F8 01");
         if (mode.size() != 1 || render.size() != 1 || actor.size() != 1 || matrix.size() != 1
             || sprite.size() != 1 || fonts.size() != 1 || room.size() != 1
             || background.size() != 1 || task.size() != 1 || title.size() != 1 || inventoryScreen.size() != 1) return;
@@ -328,7 +377,7 @@ namespace RE1Presentation
         if (movie.size() == 1 && movieId.size() == 1)
         {
             mainWindow = *movie.get_first<HWND*>(31);
-            movieWindow = *movie.get_first<HWND*>(105);
+            movieWindow = *movie.get_first<HWND*>(layout.japanese ? 111 : 105);
             movieDevice = *movieId.get_first<MCIDEVICEID*>(2);
             if (const auto library = GetModuleHandleW(L"winmm.dll"))
                 sendMovieCommand = reinterpret_cast<decltype(sendMovieCommand)>(GetProcAddress(library, "mciSendCommandA"));

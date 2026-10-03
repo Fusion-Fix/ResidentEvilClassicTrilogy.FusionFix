@@ -21,11 +21,12 @@ export namespace RE1Saves
     int(__cdecl* taskExit)() = nullptr;
     int requested = -1, pending = -1;
     bool autoAttempted = false;
+    bool japanese = false;
     std::filesystem::path directory;
 
     bool CanLoad() { return title && title[0] == 1 && title[1] == 2; }
 
-    std::filesystem::path File(int slot) { return directory / (L"savedat" + std::to_wstring(slot + 1) + L".dat"); }
+    std::filesystem::path File(int slot) { return directory / (L"savedat" + std::to_wstring(slot + 1) + (japanese ? L".daj" : L".dat")); }
 
     bool HasSave()
     {
@@ -81,13 +82,15 @@ export namespace RE1Saves
     {
         auto state = hook::pattern("A0 ? ? ? ? 85 C0 74 ? 83 F8 01 0F 84 ? ? ? ? 5E 83 C4 04 C3 33 C0 A0");
         auto input = hook::pattern("F7 05 ? ? ? ? FF 0E 00 00 75 ? 85 F6 75 ? F6 05 ? ? ? ? 51 74 ? F6 05");
-        auto slots = hook::pattern("83 FD 09 0F 87 ? ? ? ? FF 24 AD ? ? ? ? BD 01 00 00 00 33 F6 8D BC 24 44 01 00 00");
-        auto captions = hook::pattern("F6 05 ? ? ? ? 10 74 11 6A 00 6A 5D E8 ? ? ? ? 83 C4 08 E9");
+        auto slots = hook::pattern("? ? ? ? ? ? ? ? ? FF 24 AD ? ? ? ? BD 01 00 00 00 33 ? 8D ? 24 44 01 00 00");
+        auto captions = hook::pattern("? ? ? ? ? ? ? 74 11 6A 00 6A 5D E8 ? ? ? ? 83 C4 08 E9");
+        auto demo = hook::pattern("F6 05 ? ? ? ? 10 66 8B 0D ? ? ? ? 89 15 ? ? ? ? 66 A3 ? ? ? ? 66 89 0D");
         auto loaded = hook::pattern("F6 05 ? ? ? ? 10 6A 00 74 0F 6A 5C E8");
-        if (state.size() != 1 || input.size() != 1 || slots.size() != 1 || captions.size() != 1 || loaded.size() != 1) return;
+        if (state.size() != 1 || input.size() != 1 || slots.size() != 1 || captions.size() != 1 || loaded.size() != 1 || demo.size() != 1) return;
         title = *state.get_first<uint8_t*>(1);
+        japanese = *slots.get_first<uint8_t>(22) == 0xFF; // Japanese picker iterates with EDI and uses .daj saves.
         pressed = *input.get_first<uint32_t*>(2);
-        control = reinterpret_cast<uint32_t*>(*captions.get_first<uint8_t*>(2) - 3);
+        control = reinterpret_cast<uint32_t*>(*demo.get_first<uint8_t*>(2) - 3);
         flags = reinterpret_cast<uint32_t*>(*loaded.get_first<uint8_t*>(2) - 3);
         taskExit = reinterpret_cast<decltype(taskExit)>(injector::GetBranchDestination(captions.get_first(21)).as_int());
         wchar_t executable[MAX_PATH]{};

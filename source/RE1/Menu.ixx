@@ -48,10 +48,10 @@ namespace RE1Menu
 
     void Init()
     {
-        auto frame = hook::pattern("80 3D ? ? ? ? 00 53 56 57 55 75 04 6A 00 EB 02 6A 01 E8");
-        auto window = hook::pattern("83 EC 40 83 3D ? ? ? ? 00 53 56 57 55 74 30 8B 44 24 60");
+        auto frame = hook::pattern("? ? ? ? ? ? ? 53 56 57 55 75 04 6A 00 EB 02 6A 01 E8");
+        auto window = hook::pattern("53 56 57 55 74 ? 8B 44 24 60 8B 5C 24 5C 8B 7C 24 58");
         auto flip = hook::pattern("56 FF 05 ? ? ? ? E8 ? ? ? ? FF 15 ? ? ? ? 83 3D ? ? ? ? 00 8B F0 E9");
-        auto input = hook::pattern("83 3D ? ? ? ? 00 74 15 6A 00 A1 ? ? ? ? 50 E8 ? ? ? ? 83 C4 08 A3 ? ? ? ? 83 3D ? ? ? ? 02");
+        auto input = hook::pattern("? ? ? ? ? ? ? 74 15 6A 00 A1 ? ? ? ? 50 E8 ? ? ? ? 83 C4 08 A3 ? ? ? ? 83 3D ? ? ? ? 02");
         if (frame.size() != 1 || window.size() != 1 || flip.size() != 1 || input.size() != 1) return;
         present = reinterpret_cast<decltype(present)>(flip.get_first());
         joy = *input.get_first<uint32_t*>(0x33);
@@ -60,7 +60,11 @@ namespace RE1Menu
         shInput = safetyhook::create_inline(input.get_first(), Input);
         if (!shInput) return;
         ClassicMenu::pause.emplace_back([](bool) { waitForInputRelease = true; });
-        shWindow = safetyhook::create_inline(window.get_first(), Window);
+        const auto windowBody = window.get_first<uint8_t>();
+        // Japanese loads the wrapper into ECX; Western versions test its
+        // global directly. Existing wrapper detours preserve this body.
+        const auto windowEntry = windowBody - ((windowBody[-2] == 0x85 && windowBody[-1] == 0xC9) ? 11 : 10);
+        shWindow = safetyhook::create_inline(windowEntry, Window);
         shMain = safetyhook::create_inline(frame.get_first(), Main);
         auto pauseAudio = hook::pattern("83 3D ? ? ? ? 00 53 56 74 28 A1 ? ? ? ? 50 E8 ? ? ? ? 83 C4 04 83 F8 01 75 15");
         auto resumeAudio = hook::pattern("83 3D ? ? ? ? 00 56 74 20 80 3D ? ? ? ? 01 75 17 6A 00 A1");

@@ -19,7 +19,7 @@ namespace RE1Presentation
 {
     using ClassicMemory::Read;
     using ClassicMemory::Write;
-    SafetyHookMid shMode, shMovieInput;
+    SafetyHookMid shMode, shMovieInput, shMovieBlit;
     SafetyHookInline shRender, shMatrix, shSprite, shBackground, shMovie, shMovieFrame, shMoviePlay;
     HWND* mainWindow = nullptr;
     HWND* movieWindow = nullptr;
@@ -152,6 +152,41 @@ namespace RE1Presentation
             std::min(scaledHeight, int(std::lround(viewport.y + viewport.height)) - y)))
             if (!SetWindowRgn(*movieWindow, region, TRUE)) DeleteObject(region);
         return moved;
+    }
+
+    void MovieBlit(SafetyHookContext& registers)
+    {
+        // GOG redirects the movie's StretchBlt to a DirectDraw surface and
+        // replaces its destination with the entire surface. MCI window sizing
+        // cannot control this path; correct the final surface copy instead.
+        if (!movieWindow || !movieDevice || !*movieDevice || !IsWindow(*movieWindow)) return;
+        auto* args = reinterpret_cast<uint32_t*>(registers.esp);
+        const int width = int(args[3]), height = int(args[4]);
+        const int sourceWidth = int(args[8]), sourceHeight = int(args[9]);
+        if (width <= 0 || height <= 0 || sourceWidth <= 0 || sourceHeight <= 0) return;
+        const auto viewport = Presentation::Viewport::Scene(float(width), float(height), ClassicGame::GetSettings().maxAspectRatio);
+        const float scale = ClassicGame::Enabled(ClassicGame::Option::PanAndScan)
+            ? std::max(viewport.width / sourceWidth, viewport.height / sourceHeight)
+            : std::min(viewport.width / sourceWidth, viewport.height / sourceHeight);
+        const float x = viewport.x + (viewport.width - sourceWidth * scale) * 0.5f;
+        const float y = viewport.y + (viewport.height - sourceHeight * scale) * 0.5f;
+        const float left = std::max(x, viewport.x), top = std::max(y, viewport.y);
+        const float right = std::min(x + sourceWidth * scale, viewport.x + viewport.width);
+        const float bottom = std::min(y + sourceHeight * scale, viewport.y + viewport.height);
+        const int sourceLeft = int(std::lround((left - x) / scale));
+        const int sourceTop = int(std::lround((top - y) / scale));
+        const int sourceRight = int(std::lround((right - x) / scale));
+        const int sourceBottom = int(std::lround((bottom - y) / scale));
+        if (sourceRight <= sourceLeft || sourceBottom <= sourceTop) return;
+        PatBlt(reinterpret_cast<HDC>(args[0]), 0, 0, width, height, BLACKNESS);
+        args[1] = uint32_t(std::lround(left));
+        args[2] = uint32_t(std::lround(top));
+        args[3] = uint32_t(std::lround(right)) - args[1];
+        args[4] = uint32_t(std::lround(bottom)) - args[2];
+        args[6] += sourceLeft;
+        args[7] += sourceTop;
+        args[8] = sourceRight - sourceLeft;
+        args[9] = sourceBottom - sourceTop;
     }
 
     void Mode(SafetyHookContext& registers)
@@ -382,6 +417,11 @@ namespace RE1Presentation
             if (const auto library = GetModuleHandleW(L"winmm.dll"))
                 sendMovieCommand = reinterpret_cast<decltype(sendMovieCommand)>(GetProcAddress(library, "mciSendCommandA"));
             shMovie = safetyhook::create_inline(movie.get_first(), Movie);
+            if (const auto wrapper = GetModuleHandleW(L"ddraw.dll"))
+            {
+                auto blit = hook::module_pattern(wrapper, "8B 15 ? ? ? ? 50 A1 ? ? ? ? 51 8B 4C 24 34 D1 EA D1 E8 52 50 6A 00 6A 00 51 FF 15 ? ? ? ? 8B 16 8B F8 8B 44 24 1C 50 56 FF 52 68");
+                if (blit.size() == 1) shMovieBlit = safetyhook::create_mid(blit.get_first(28), MovieBlit);
+            }
             ClassicGame::onSettingsChanged() += []() { Movie(); };
             if (movieFrame.size() == 1 && flip.size() == 1 && moviePlay.size() == 1 && movieInput.size() == 1)
             {

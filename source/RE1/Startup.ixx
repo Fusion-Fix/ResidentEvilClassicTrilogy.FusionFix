@@ -10,6 +10,9 @@ import RE1Saves;
 namespace RE1Intro
 {
     SafetyHookInline shStartup, shTitle;
+    SafetyHookMid shOpeningMovie;
+    uintptr_t openingMovieResume = 0;
+    int32_t* openingMovieTimer = nullptr;
     void(__cdecl* replace)(void*) = nullptr;
     void* titleTask = nullptr;
     uint8_t* title = nullptr;
@@ -54,6 +57,24 @@ namespace RE1Intro
         titleTask = *next.get_first<void*>(japanese ? 11 : 1);
         replace = reinterpret_cast<decltype(replace)>(injector::GetBranchDestination(next.get_first(japanese ? 15 : 5)).as_int());
         title = *state.get_first<uint8_t*>(1);
+        // The title task queues OU.avi before its first menu frame. Bypass
+        // that request too; replacing the startup task only skips the logos.
+        auto openingMovie = hook::pattern("39 1D ? ? ? ? 7F ? A1 ? ? ? ? 6A 01 88 1D ? ? ? ? A3 ? ? ? ? C7 05 ? ? ? ? 10 00 00 00 81 0D ? ? ? ? 00 00 04 00 E8 ? ? ? ? 83 C4 04");
+        if (openingMovie.size() == 1)
+        {
+            auto* code = openingMovie.get_first<uint8_t>();
+            openingMovieTimer = *reinterpret_cast<int32_t**>(code + 2);
+            openingMovieResume = uintptr_t(code + 8 + *reinterpret_cast<int8_t*>(code + 7));
+            shOpeningMovie = safetyhook::create_mid(code, [](SafetyHookContext& context)
+            {
+                if (ClassicGame::Enabled(ClassicGame::Option::SkipIntro))
+                {
+                    // Preserve the timer initialized by the skipped block.
+                    *openingMovieTimer = 16;
+                    context.eip = openingMovieResume;
+                }
+            });
+        }
         shStartup = safetyhook::create_inline(startup.get_first(), Startup);
         shTitle = safetyhook::create_inline(menu.get_first(), Title);
     }

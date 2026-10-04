@@ -66,9 +66,8 @@ namespace NativeFont
         {
             if (x < 0 || y < 0 || x >= width || y >= height) return 0;
             const auto index = indices[y * width + x];
-            // RE3's font packs two 2-bit glyph layers into each 4-bit pixel.
-            // CLUT 490 selects the low layer; CLUT 492 is its green version.
-            // Its general-purpose CLUT 480 displays both layers at once.
+            // RE3's packed Japanese font uses CLUT 490/492 to select one
+            // glyph layer. Western fonts use CLUT 480/482 instead.
             const int row = textPalette + (green && palettes >= 5 ? (colors == 32 ? 2 : 1) : 0);
             auto c = palette[row * colors + index];
             if (green && row == 0) c &= 0xFF00FF00; // RE1's green modulation.
@@ -116,7 +115,16 @@ namespace NativeFont
         bool Set(Bitmap bitmap, int game, bool jp)
         {
             if (game == 3 && bitmap.colors == 32 && bitmap.palettes >= 13)
-                bitmap.textPalette = 10;
+            {
+                // Western TIMs reserve the Japanese CLUT rows but leave the
+                // highlight row empty. Select packed glyph palettes only
+                // when the asset actually supplies them.
+                const auto first = bitmap.palette.begin() + 12 * bitmap.colors;
+                // Four-bit glyph pixels address only the first 16 colours;
+                // the other half of each CLUT belongs to unrelated artwork.
+                if (std::any_of(first, first + 16, [](uint32_t c) { return c != 0; }))
+                    bitmap.textPalette = 10;
+            }
             atlases.clear(); glyphs.clear(); atlases.push_back(std::move(bitmap)); japanese = jp;
             cellHeight = 14;
             cellWidth = game == 1 && jp ? 14 : 8;

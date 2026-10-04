@@ -8,6 +8,8 @@ module;
 #include <unordered_map>
 #include <vector>
 #include "Presentation.hxx"
+#include "NativeMenu.hxx"
+#include "NativeFont.hxx"
 
 export module Menu;
 import common;
@@ -31,14 +33,15 @@ namespace GameMenu
 {
     using WobbleFix::Read;
     using WobbleFix::Write;
-    SafetyHookInline shWindow, shScheduler, shInterface, shResetGraphics;
+    SafetyHookInline shWindow, shScheduler, shInterface, shResetGraphics, shFontRead;
     Game::State game;
     std::atomic<bool> request = false;
     std::mutex menuMutex;
     HWND window = nullptr;
     bool confirmation = false, yes = false;
     bool previousStart = false;
-    int selection = 0, scroll = 0;
+    NativeMenu::State menu;
+    std::atomic<int> inputDevice = 0;
     uint32_t previousInput = 0;
     std::atomic<uint32_t> keyboardHeld = 0, keyboardPressed = 0;
     uint64_t repeatAt = 0;
@@ -51,8 +54,85 @@ namespace GameMenu
     bool pauseClock = false;
     using CreateTexture = int(__thiscall*)(void*, void*, int, int, int, int);
     CreateTexture createTexture = nullptr;
-    constexpr std::array<const char*, 12> rows = { "Resume", "Wobble fix", "Widescreen", "Alternate controls", "Keyboard movement",
-        "Skip intro", "Skip doors", "Fast load", "Auto load", "Load slot", "Load game", "Exit game" };
+    NativeFont::Font font;
+    int(__cdecl* archiveOpen)(const char*, int, int) = nullptr;
+    int(__cdecl* archiveSeek)(int, int, int) = nullptr;
+    int(__cdecl* archiveRead)(int, void*, int) = nullptr;
+    int(__cdecl* archiveClose)(int) = nullptr;
+    const char* fontPath = nullptr;
+    char* nativeFilePath = nullptr;
+
+    const char* ResolveFontPath()
+    {
+        // hook::pattern's default range ends with executable code. Font
+        // filenames are in .rdata, so search readable initialized PE sections.
+        const auto base = reinterpret_cast<uintptr_t>(GetModuleHandleW(nullptr));
+        const auto* dos = reinterpret_cast<const IMAGE_DOS_HEADER*>(base);
+        const auto* nt = reinterpret_cast<const IMAGE_NT_HEADERS*>(base + dos->e_lfanew);
+        const auto* sections = IMAGE_FIRST_SECTION(nt);
+        for (WORD section = 0; section < nt->FileHeader.NumberOfSections; ++section)
+        {
+            const auto& data = sections[section];
+            if (!(data.Characteristics & IMAGE_SCN_MEM_READ) || data.SizeOfRawData < 27) continue;
+            const auto start = base + data.VirtualAddress;
+            const auto size = std::min(data.SizeOfRawData, data.Misc.VirtualSize ? data.Misc.VirtualSize : data.SizeOfRawData);
+            auto paths = hook::pattern(start, start + size,
+                "62 69 6F 31 39 2F ? ? ? ? 5F ? 2F ? ? ? ? 2F ? ? ? ? 2E ? ? ? 00");
+            for (size_t i = 0; i < paths.size(); ++i)
+            {
+                const auto* candidate = paths.get(i).get<char>();
+                if (_strnicmp(candidate + 6, "data_", 5) == 0 && _strnicmp(candidate + 13, "etc2/", 5) == 0
+                    && _strnicmp(candidate + 18, "tex", 3) == 0 && _stricmp(candidate + 22, ".tim") == 0)
+                    return candidate;
+            }
+        }
+        return nullptr;
+    }
+
+    int __cdecl FontFileHook(const char* filename, void* buffer)
+    {
+        const int size = shFontRead.unsafe_ccall<int>(filename, buffer);
+        if (size >= 32 && size <= 1024 * 1024 && buffer && fontPath && _stricmp(filename, fontPath) == 0)
+        {
+            // Capture the decoded TIM before the native upload changes its
+            // coordinates or the game's shared read buffer gets reused.
+            const std::lock_guard lock(menuMutex);
+            if (!font.Ready()) font.Load({static_cast<const uint8_t*>(buffer), size_t(size)}, 3,
+                Localization::language == "japanese");
+        }
+        return size;
+    }
+
+    bool LoadFont()
+    {
+        if (font.Ready()) return true;
+        if (!fontPath || !nativeFilePath || !archiveOpen || !archiveSeek || !archiveRead || !archiveClose) return false;
+        // Match the native file loader's full filename context as well as its
+        // archive-relative argument, then restore the interrupted game's path.
+        struct RestorePath
+        {
+            char* target;
+            std::string saved;
+            ~RestorePath() { memcpy(target, saved.c_str(), saved.size() + 1); }
+        } path{nativeFilePath, std::string(nativeFilePath)};
+        if (path.saved.size() < 3) return false;
+        memcpy(nativeFilePath + 3, fontPath, strlen(fontPath) + 1);
+        const int handle = archiveOpen(fontPath + 5, 0, 0);
+        if (handle < 0) return false;
+        const int size = archiveSeek(handle, 0, 2);
+        bool loaded = false;
+        if (size >= 32 && size <= 1024 * 1024)
+        {
+            // The native loader ignores the rewind return value.
+            archiveSeek(handle, 0, 0);
+            std::vector<uint8_t> bytes(size);
+            loaded = archiveRead(handle, bytes.data(), size) == size
+                && font.Load(bytes, 3, Localization::language == "japanese");
+        }
+        archiveClose(handle);
+        return loaded;
+    }
+
     constexpr std::array<Game::Option, 7> options = { Game::Option::WobbleFix, Game::Option::PanAndScan, Game::Option::AlternateControls,
         Game::Option::SkipIntro, Game::Option::SkipDoor, Game::Option::FastLoad, Game::Option::AutoLoad };
 
@@ -81,84 +161,44 @@ namespace GameMenu
         return ((value * (mask >> shift) + 127) / 255 << shift) & mask;
     }
 
-    TextTexture* Texture(const std::wstring& text, void* device)
+    TextTexture* Texture(const std::wstring& text, void* device, bool green, bool compact)
     {
-        if (textureDevice != device)
+        if (!LoadFont()) return nullptr;
+        if (textureDevice != device) { textures.clear(); textureDevice = device; }
+        const auto key = std::wstring(1, wchar_t(1 + int(green) + 2 * int(compact))) + text;
+        if (const auto found = textures.find(key); found != textures.end())
         {
-            textures.clear();
-            textureDevice = device;
-        }
-        if (const auto found = textures.find(text); found != textures.end())
-        {
-            if (reinterpret_cast<IDirectDrawSurface4*>(found->second->native[0])->IsLost() == DD_OK)
-                return found->second.get();
+            if (reinterpret_cast<IDirectDrawSurface4*>(found->second->native[0])->IsLost() == DD_OK) return found->second.get();
             textures.erase(found);
         }
-        const auto dc = CreateCompatibleDC(nullptr);
-        if (!dc) return nullptr;
-        // Rasterize localized glyphs, including Japanese, into an engine texture.
-        // Panels, text, blending and presentation all use the game's renderer.
-        const auto font = CreateFontW(-12, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET,
-            OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, NONANTIALIASED_QUALITY, DEFAULT_PITCH,
-            Localization::language == "japanese" ? L"MS Gothic" : L"Times New Roman");
-        const auto oldFont = SelectObject(dc, font);
-        SIZE size{};
-        GetTextExtentPoint32W(dc, text.c_str(), int(text.size()), &size);
-        const int width = int(std::bit_ceil(unsigned(std::clamp(size.cx + 2L, 8L, 512L))));
-        constexpr int height = 16;
-        BITMAPINFO bitmap{};
-        bitmap.bmiHeader = { sizeof(BITMAPINFOHEADER), width, -height, 1, 32, BI_RGB };
-        uint32_t* pixels = nullptr;
-        const auto image = CreateDIBSection(dc, &bitmap, DIB_RGB_COLORS, reinterpret_cast<void**>(&pixels), nullptr, 0);
-        const auto oldImage = SelectObject(dc, image);
-        bool ready = image && pixels;
-        std::unique_ptr<TextTexture> texture;
+        const auto image = font.Render(text, green);
+        if (!image.width || !image.height || image.width > 2048) return nullptr;
+        const int width = int(std::bit_ceil(unsigned(std::max(image.width, 8))));
+        const int height = int(std::bit_ceil(unsigned(std::max(image.height, 8))));
+        auto texture = std::make_unique<TextTexture>();
+        if (!createTexture(texture->native.data(), device, width, height, 0, 0x2A)) return nullptr;
+        auto* surface = reinterpret_cast<IDirectDrawSurface4*>(texture->native[0]);
+        DDSURFACEDESC2 locked{ .dwSize = sizeof(DDSURFACEDESC2) };
+        if (FAILED(surface->Lock(nullptr, &locked, DDLOCK_WAIT | DDLOCK_WRITEONLY, nullptr))) return nullptr;
+        const auto& format = locked.ddpfPixelFormat;
+        const int bytes = int(format.dwRGBBitCount / 8);
+        const bool ready = bytes == 2 || bytes == 4;
         if (ready)
         {
-            memset(pixels, 0, width * height * 4);
-            SetBkMode(dc, TRANSPARENT);
-            SetTextColor(dc, RGB(255, 255, 255));
-            TextOutW(dc, 1, 0, text.c_str(), int(text.size()));
-            GdiFlush();
-            texture = std::make_unique<TextTexture>();
-            ready = createTexture(texture->native.data(), device, width, height, 0, 0x2A) != 0;
-            if (ready)
+            for (DWORD y = 0; y < locked.dwHeight; ++y)
+                memset(static_cast<uint8_t*>(locked.lpSurface) + y * locked.lPitch, 0, locked.dwWidth * bytes);
+            for (int y = 0; y < image.height; ++y) for (int x = 0; x < image.width; ++x)
             {
-                auto* surface = reinterpret_cast<IDirectDrawSurface4*>(texture->native[0]);
-                DDSURFACEDESC2 locked = { .dwSize = sizeof(DDSURFACEDESC2) };
-                ready = surface->Lock(nullptr, &locked, DDLOCK_WAIT | DDLOCK_WRITEONLY, nullptr) == DD_OK;
-                if (ready)
-                {
-                    const auto& format = locked.ddpfPixelFormat;
-                    const int bytes = int(format.dwRGBBitCount / 8);
-                    ready = bytes == 2 || bytes == 4;
-                    if (ready)
-                    {
-                        for (DWORD y = 0; y < locked.dwHeight; ++y)
-                            memset(static_cast<uint8_t*>(locked.lpSurface) + y * locked.lPitch, 0, locked.dwWidth * bytes);
-                        for (int y = 0; y < height; ++y)
-                            for (int x = 0; x < width; ++x)
-                            {
-                                const auto alpha = pixels[y * width + x] & 255;
-                                const uint32_t color = Channel(255, format.dwRBitMask) | Channel(255, format.dwGBitMask)
-                                    | Channel(255, format.dwBBitMask) | Channel(alpha, format.dwRGBAlphaBitMask);
-                                memcpy(static_cast<uint8_t*>(locked.lpSurface) + y * locked.lPitch + x * bytes, &color, bytes);
-                            }
-                    }
-                    surface->Unlock(nullptr);
-                    texture->width = width;
-                    texture->height = height;
-                }
+                const auto c = image.pixels[y * image.width + x];
+                const uint32_t packed = Channel((c >> 16) & 255, format.dwRBitMask) | Channel((c >> 8) & 255, format.dwGBitMask)
+                    | Channel(c & 255, format.dwBBitMask) | Channel(c >> 24, format.dwRGBAlphaBitMask);
+                memcpy(static_cast<uint8_t*>(locked.lpSurface) + y * locked.lPitch + x * bytes, &packed, bytes);
             }
         }
-        SelectObject(dc, oldImage); SelectObject(dc, oldFont);
-        if (image) DeleteObject(image);
-        if (font) DeleteObject(font);
-        DeleteDC(dc);
-        if (!ready) return nullptr;
-        auto* result = texture.get();
-        textures.emplace(text, std::move(texture));
-        return result;
+        const auto unlocked = surface->Unlock(nullptr);
+        if (!ready || FAILED(unlocked)) return nullptr;
+        texture->width = image.width; texture->height = image.height;
+        auto* result = texture.get(); textures.emplace(key, std::move(texture)); return result;
     }
 
     void Close()
@@ -173,8 +213,35 @@ namespace GameMenu
         *game.held = *game.pressed = 0;
     }
 
+    int SelectedRow()
+    {
+        switch (menu.Selected(3))
+        {
+        case NativeMenu::Resume: return 0;
+        case NativeMenu::Wobble: return 1;
+        case NativeMenu::Widescreen: return 2;
+        case NativeMenu::Controls: return 3;
+        case NativeMenu::RunMode: return 4;
+        case NativeMenu::SkipIntro: return 5;
+        case NativeMenu::SkipDoors: return 6;
+        case NativeMenu::FastLoad: return 7;
+        case NativeMenu::AutoLoad: return 8;
+        case NativeMenu::LoadSlot: return 9;
+        case NativeMenu::Load: return 10;
+        case NativeMenu::Quit: return 11;
+        default: return -1;
+        }
+    }
+
+    void Back()
+    {
+        if (confirmation) confirmation = false;
+        else if (!menu.Return()) Close();
+    }
+
     void Change(int delta)
     {
+        const int selection = SelectedRow();
         if (selection == 4)
         {
             auto& mode = Game::GetSettings().keyboardRunMode;
@@ -196,6 +263,8 @@ namespace GameMenu
 
     void Activate()
     {
+        if (!confirmation && menu.Enter(menu.Selected(3))) return;
+        const int selection = SelectedRow();
         if (confirmation)
         {
             if (yes)
@@ -221,6 +290,8 @@ namespace GameMenu
     bool Handle(uint32_t input, bool start, bool escape)
     {
         const std::lock_guard lock(menuMutex);
+        menu.controller = inputDevice.load() != 0;
+        menu.xinput = inputDevice.load() == 2;
         const auto pressed = (input & ~previousInput) | keyboardPressed.exchange(0);
         const bool toggle = request.exchange(false) || (start && !previousStart)
             || ((pressed & 32) && escape && (Menu::opened || !Input::InNativeMenu()));
@@ -229,8 +300,7 @@ namespace GameMenu
         {
             if (Menu::opened)
             {
-                if (confirmation) confirmation = false;
-                else Close();
+                if (start && !previousStart) Close(); else Back();
             }
             else if (Menu::rendererReady)
             {
@@ -239,7 +309,7 @@ namespace GameMenu
                 pauseClock = playTimeAnchor && frameCounter && (*game.flags & 0x08000000);
                 if (pauseClock) pauseTime = frameCounter(-1);
                 confirmation = false;
-                selection = scroll = 0;
+                menu.Reset();
                 repeatAt = GetTickCount64() + 400;
             }
         }
@@ -259,17 +329,15 @@ namespace GameMenu
             }
             else
             {
-                if (navigation & 1) selection = (selection + int(rows.size()) - 1) % int(rows.size());
-                if (navigation & 2) selection = (selection + 1) % int(rows.size());
+                if (navigation & 1) menu.Move(-1, 3);
+                if (navigation & 2) menu.Move(1, 3);
                 if (navigation & 4) Change(-1);
                 if (navigation & 8) Change(1);
-                scroll = std::clamp(scroll, std::max(0, selection - 9), selection);
             }
             if (pressed & 16) Activate();
             if (pressed & 32)
             {
-                if (confirmation) confirmation = false;
-                else Close();
+                Back();
             }
         }
         previousInput = input;
@@ -286,6 +354,7 @@ namespace GameMenu
         const auto key = [&](int code) { return focused && (GetAsyncKeyState(code) & 0x8000) != 0; };
         const auto pad = Input::GetPad();
         const bool start = focused && (pad.buttons & 1);
+        if (focused && (pad.buttons || pad.dpad || std::abs(pad.left.x) > 0.5f || std::abs(pad.left.y) > 0.5f)) inputDevice = pad.xinput ? 2 : 1;
         const uint32_t input = (focused ? keyboardHeld.load() : 0)
             | uint32_t(focused && ((pad.dpad & 1) || pad.left.y > 0.5f))
             | uint32_t(focused && ((pad.dpad & 4) || pad.left.y < -0.5f)) << 1
@@ -299,6 +368,7 @@ namespace GameMenu
     int __fastcall WindowHook(void* application, void*, UINT message, WPARAM wparam, LPARAM lparam)
     {
         window = Read<HWND>(application, 40);
+        if (message == WM_KEYDOWN) inputDevice = 0;
         if (message == WM_KILLFOCUS)
         {
             keyboardHeld = keyboardPressed = 0;
@@ -385,6 +455,29 @@ namespace GameMenu
         shResetGraphics = safetyhook::create_inline(resetGraphics.get_first(), ResetGraphicsHook);
         if (!shResetGraphics) return;
         Localization::Init();
+        fontPath = ResolveFontPath();
+        // These short archive wrappers occur in several unrelated interfaces.
+        // Resolve the actual calls made by the game's TIM file loader instead
+        // of treating non-unique wrapper signatures as missing functions.
+        auto fileLoader = hook::pattern("53 55 56 8B 74 24 10 57 56 68 ? ? ? ? C6 05 ? ? ? ? 00 33 DB E8 ? ? ? ? 8D 7E 05 53 53 57 E8");
+        for (size_t i = 0; i < fileLoader.size(); ++i)
+        {
+            auto* loader = fileLoader.get(i).get<uint8_t>();
+            // The partial-file reader shares the prologue, but does not seek
+            // to SEEK_END to obtain the complete file's size at this point.
+            if (loader[0x57] == 0x6A && loader[0x58] == SEEK_END && loader[0x22] == 0xE8
+                && loader[0x5C] == 0xE8 && loader[0x76] == 0xE8 && loader[0x98] == 0xE8)
+            {
+                nativeFilePath = *reinterpret_cast<char**>(loader + 10);
+                archiveOpen = reinterpret_cast<decltype(archiveOpen)>(injector::GetBranchDestination(loader + 0x22).as_int());
+                archiveSeek = reinterpret_cast<decltype(archiveSeek)>(injector::GetBranchDestination(loader + 0x5C).as_int());
+                archiveRead = reinterpret_cast<decltype(archiveRead)>(injector::GetBranchDestination(loader + 0x76).as_int());
+                archiveClose = reinterpret_cast<decltype(archiveClose)>(injector::GetBranchDestination(loader + 0x98).as_int());
+                shFontRead = safetyhook::create_inline(loader, FontFileHook);
+                break;
+            }
+        }
+
         if (clock.size() == 1)
         {
             playTimeAnchor = *clock.get_first<uint32_t*>(9);
@@ -440,55 +533,52 @@ void Menu::Draw(void* renderer, void* device, void* flat, void* textured)
         struct FlatVertex { float x, y, z, rhw; uint32_t color, specular; };
         const float l = viewport.x + x * scale, t = viewport.y + y * scale;
         FlatVertex vertices[] = { {l,t,0,1,color,0}, {l,t+h*scale,0,1,color,0}, {l+w*scale,t,0,1,color,0}, {l+w*scale,t+h*scale,0,1,color,0} };
-        reinterpret_cast<Flat>(flat)(device, vertices, 4, 0);
+        reinterpret_cast<Flat>(flat)(device, vertices, 4, 1);
     };
-    const auto text = [&](float x, float y, const std::wstring& label, uint32_t color)
+    const auto text = [&](float x, float y, const std::wstring& label, uint32_t color, float available, bool compact)
     {
-        auto* texture = Texture(label, Read<void*>(device, 0));
+        auto* texture = Texture(label, Read<void*>(device, 0), color == 0xFF00FF00, compact);
         if (!texture) return;
         const float l = viewport.x + x * scale, t = viewport.y + y * scale;
-        const float w = texture->width * scale, h = texture->height * scale;
+        const float factor = std::min(compact ? 0.65f : 1.0f, available / texture->width);
+        const float w = texture->width * scale * factor, h = texture->height * scale * factor;
+        if (color == 0xFF00FF00) color = 0xFFFFFFFF;
         const float u = float(texture->width) / Read<int>(texture->native.data(), 8);
         const float v = float(texture->height) / Read<int>(texture->native.data(), 12);
         Vertex vertices[] = { {l,t,0,1,color,0,0,0}, {l,t+h,0,1,color,0,0,v}, {l+w,t,0,1,color,0,u,0}, {l+w,t+h,0,1,color,0,u,v} };
-        reinterpret_cast<Textured>(textured)(device, vertices, 4, int(texture->native[1]), 0x20);
+        reinterpret_cast<Textured>(textured)(device, vertices, 4, int(texture->native[1]), 1);
     };
-    panel(-viewport.x / scale, -viewport.y / scale, width / scale, height / scale, 0x80000000);
-    panel(17, 17, 286, 206, 0xFF777777);
-    panel(18, 18, 284, 204, 0xFF080808);
-    text(29, 25, Localization::Text("FUSION FIX OPTIONS"), 0xFFE0E0E0);
-    panel(27, 43, 266, 1, 0xFF555555);
-    if (confirmation)
+    panel(-viewport.x / scale, -viewport.y / scale, width / scale, height / scale, 0xB0000000);
+    const auto value = [&](NativeMenu::Action action) -> std::wstring
     {
-        text(33, 83, Localization::Text("Quit the game?"), 0xFFFFFFFF);
-        text(65, 122, (yes ? L"> " : L"  ") + Localization::Text("Yes"), yes ? 0xFFE8BC68 : 0xFFAAAAAA);
-        text(173, 122, (!yes ? L"> " : L"  ") + Localization::Text("No"), !yes ? 0xFFE8BC68 : 0xFFAAAAAA);
-    }
-    else
-    {
-        for (int row = scroll; row < std::min(scroll + 10, int(rows.size())); ++row)
+        if (action == NativeMenu::Controls)
+            return Localization::Text(Game::Enabled(Game::Option::AlternateControls) ? "Alternate" : "Original");
+        if (action == NativeMenu::RunMode)
         {
-            std::wstring value;
-            if (row == 4)
-            {
-                constexpr const char* modes[] = { "Hold: run", "Toggle: run", "Hold: walk", "Toggle: walk" };
-                value = Localization::Text(modes[Game::GetSettings().keyboardRunMode.load()]);
-            }
-            else if (row == 9)
-            {
-                const int slot = Game::GetSettings().loadSlot.load();
-                value = slot ? Localization::Text("Slot") + L" " + std::to_wstring(slot) : Localization::Text("Latest");
-            }
-            else if (row >= 1 && row <= 8)
-                value = Localization::Text(Game::Enabled(options[row - 1 - int(row > 4)]) ? "On" : "Off");
-            const uint32_t color = row == selection ? 0xFFE8BC68 : row == 10 && !Saves::CanLoad() ? 0xFF555555 : 0xFFCCCCCC;
-            const float y = 52.0f + (row - scroll) * 14.5f;
-            text(26, y, row == selection ? L">" : L"", color);
-            text(37, y, Localization::Text(rows[row]), color);
-            if (!value.empty()) text(203, y, value, color);
+            constexpr const char* modes[] = { "Hold: run", "Toggle: run", "Hold: walk", "Toggle: walk" };
+            return Localization::Text(modes[Game::GetSettings().keyboardRunMode.load()]);
         }
-        text(28, 205, Localization::Text("Navigate / Change / Confirm / Back"), 0xFF888888);
-    }
+        if (action == NativeMenu::LoadSlot)
+        {
+            const int slot = Game::GetSettings().loadSlot.load();
+            return slot ? Localization::Text("Slot") + L" " + std::to_wstring(slot) : Localization::Text("Latest");
+        }
+        const auto option = [&]() -> int
+        {
+            switch (action)
+            {
+            case NativeMenu::Wobble: return 0;
+            case NativeMenu::Widescreen: return 1;
+            case NativeMenu::SkipIntro: return 3;
+            case NativeMenu::SkipDoors: return 4;
+            case NativeMenu::FastLoad: return 5;
+            case NativeMenu::AutoLoad: return 6;
+            default: return -1;
+            }
+        }();
+        return option >= 0 ? Localization::Text(Game::Enabled(options[option]) ? "On" : "Off") : L"";
+    };
+    NativeMenu::Draw(3, menu, confirmation, yes, Saves::CanLoad(), panel, text, Localization::Text, value);
 }
 
 class MenuHooks

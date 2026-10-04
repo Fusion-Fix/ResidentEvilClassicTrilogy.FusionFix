@@ -33,6 +33,7 @@ namespace RE2Menu
 
     void Init()
     {
+        ClassicMenu::style = 2;
         auto frame = hook::pattern("A1 ? ? ? ? 85 C0 75 0F E8 ? ? ? ? C7 05 ? ? ? ? 01 00 00 00 A1 ? ? ? ? C6 05 ? ? ? ? 00 8B C8 8B D0");
         auto window = hook::pattern("8B 0D ? ? ? ? 55 8B 6C 24 14 56 8B 74 24 10 57 8B 7C 24 18 85 C9 74 1D");
         if (frame.size() != 1 || window.size() != 1) return;

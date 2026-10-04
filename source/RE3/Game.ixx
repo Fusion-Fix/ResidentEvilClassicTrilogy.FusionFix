@@ -122,8 +122,11 @@ export namespace Game
             auto controlPattern = hook::pattern("F7 05 ? ? ? ? 00 00 00 01 75 ? A9 40 42 59 10");
             auto menuPattern = hook::pattern("A0 ? ? ? ? 48 74 ? 48 0F 84 ? ? ? ? 48 0F 85 ? ? ? ? 57 E8");
             auto roomPattern = hook::pattern("0F BF 0D ? ? ? ? 8B 15 ? ? ? ? 33 C0 66 8B 04 4A 0F BF 15");
-            auto interfacePattern = hook::pattern("8B 0D ? ? ? ? 83 C1 1C 51 E8 ? ? ? ? A0 ? ? ? ? 83 C4 08 34 01");
-            auto backgroundPattern = hook::pattern("8B 0D ? ? ? ? 83 C1 1C 51 E8 ? ? ? ? 8B 35 ? ? ? ? 83 C4 04 3B F3");
+            // Japanese builds use EDX instead of ECX for these queue pointers.
+            // The absolute operand stays at +2; retain the surrounding flush
+            // and frame-toggle operations to identify the same native queues.
+            auto interfacePattern = hook::pattern("8B ? ? ? ? ? 83 ? 1C ? E8 ? ? ? ? A0 ? ? ? ? 83 C4 08 34 01");
+            auto backgroundPattern = hook::pattern("8B ? ? ? ? ? 83 ? 1C ? E8 ? ? ? ? 8B 35 ? ? ? ? 83 C4 04 3B F3");
             auto modePattern = hook::pattern("F7 05 ? ? ? ? 00 00 01 00 74 05 E8 ? ? ? ? A0 ? ? ? ? 55 56 3C 02 57");
             auto movementPattern = hook::pattern("8B 0D ? ? ? ? 8B 15 ? ? ? ? 56 8B 74 24 08 33 C0 51 8A 46 05 52 56 FF 14 85");
             auto padPattern = hook::pattern("8A 0D ? ? ? ? F7 D0 25 FF FF 00 00 80 F9 07 A3");

@@ -1,20 +1,8 @@
-[FUSION FIX OPTIONS]
-OPCIONES FUSION FIX
-
-[Resume]
-Continuar
-
 [Wobble fix]
 Corregir temblor
 
 [Widescreen]
 Pantalla panorámica
-
-[Alternate controls]
-Controles alternativos
-
-[Keyboard movement]
-Movimiento teclado
 
 [Skip intro]
 Omitir introducción
@@ -70,5 +58,146 @@ Mant.: andar
 [Toggle: walk]
 Camb.: andar
 
-[Navigate / Change / Confirm / Back]
-Navegar / Cambiar / Aceptar / Volver
+[PAUSE]
+PAUSA
+
+[Continue]
+Continuar
+
+[Control type]
+Tipo de control
+
+[Shift key]
+Tecla Mayús
+
+[Display]
+Pantalla
+
+[Controls]
+Controles
+
+[Game options]
+Opciones de juego
+
+[Return]
+Volver
+
+[Alternate]
+Alternativo
+
+[Original]
+Original
+
+[Return to the game.]
+Volver a la partida.
+
+[Load the save selected in Game options.]
+Cargar la partida elegida en las opciones.
+
+[Loading is available from the title screen.]
+Puedes cargar desde la pantalla de título.
+
+[Return there to load a saved game.]
+Vuelve allí para cargar una partida.
+
+[Fill the screen with a moving camera view.]
+Llenar la pantalla con una cámara móvil.
+
+[Menus retain their original proportions.]
+Los menús conservan sus proporciones originales.
+
+[Original: turn and move relative to the player.]
+Original: girar y moverse respecto al personaje.
+
+[Alternate: move in the direction you press.]
+Alternativo: moverse en la dirección pulsada.
+
+[Choose how Shift switches walking and running.]
+Elegir cómo Mayús cambia entre caminar y correr.
+
+[Applies to alternate keyboard controls.]
+Para el control alternativo con teclado.
+
+[Go straight to the title menu on startup.]
+Ir al menú de título al iniciar el juego.
+
+[Story movies are still played.]
+Los vídeos de la historia siguen activos.
+
+[Skip door animations between rooms.]
+Omitir animaciones de puertas entre salas.
+
+[The next room still loads normally.]
+La sala siguiente se carga normalmente.
+
+[Skip the recap text after loading a save.]
+Omitir el resumen tras cargar una partida.
+
+[Story dialogue is unaffected.]
+Los diálogos de la historia no cambian.
+
+[Load the selected save when the game starts.]
+Cargar la partida elegida al iniciar.
+
+[If unavailable, show the save selection.]
+Si no está disponible, mostrar la selección.
+
+[Choose the save used by Load game and Auto load.]
+Elegir la partida para carga manual y automática.
+
+[Latest selects the most recently saved file.]
+Última elige el archivo guardado más reciente.
+
+[Exit the game.]
+Salir del juego.
+
+[Unsaved progress will be lost.]
+Se perderá el progreso no guardado.
+
+[Stabilize character and object geometry.]
+Estabilizar la geometría de personajes y objetos.
+
+[Reduces the original polygon wobble.]
+Reduce el temblor original de los polígonos.
+
+[Adjust the picture and camera view.]
+Ajustar la imagen y la cámara.
+
+[Choose movement and keyboard run controls.]
+Elegir movimiento y carrera con teclado.
+
+[Adjust startup, room transitions and loading.]
+Ajustar inicio, cambio de sala y carga.
+
+[Changes are saved automatically.]
+Los cambios se guardan automáticamente.
+
+[Return to the pause menu.]
+Volver al menú de pausa.
+
+[Choose Yes to exit, or No to keep playing.]
+Sí para salir, No para seguir jugando.
+
+[D-pad: select / change]
+Cruceta: elegir / cambiar
+
+[D-pad / Stick: select]
+Cruceta / Palanca: elegir
+
+[Up/Down: select   Left/Right: change]
+Arriba/Abajo: elegir   Izq./Der.: cambiar
+
+[Up/Down: select]
+Arriba/Abajo: elegir
+
+[A: confirm   B: back]
+A: aceptar   B: volver
+
+[Button 1: confirm   Button 2: back]
+Botón 1: aceptar   Botón 2: volver
+
+[Enter: confirm   Esc: back]
+Intro: aceptar   Esc: volver
+
+[Left/Right: select]
+Izq./Der.: elegir

@@ -50,7 +50,9 @@ namespace IntroSkip
         auto startup = hook::pattern("64 A1 00 00 00 00 6A FF 68 ? ? ? ? 50 64 89 25 00 00 00 00 81 EC 4C 08 00 00 53 55 56 33 DB 57 8B F1");
         if (startup.size() == 1)
             shGameStartup = safetyhook::create_inline(startup.get_first(), GameStartupHook);
-        auto warning = hook::pattern("68 00 40 19 80 E8 ? ? ? ? 05 00 80 00 00 50 68 ? ? ? ? E8 ? ? ? ? 6A 00 6A 02 E8");
+        // The Japanese story routine also loads a warning image. Only the
+        // startup warning begins with the native 30-frame fade-in.
+        auto warning = hook::pattern("68 00 40 19 80 E8 ? ? ? ? 05 00 80 00 00 50 68 ? ? ? ? E8 ? ? ? ? 6A 00 6A 02 E8 ? ? ? ? 6A 1E");
         auto handshake = hook::pattern("C6 05 ? ? ? ? 01 6A 3C E8 ? ? ? ? A0 ? ? ? ? 83 C4 04 3C 02");
         auto title = hook::pattern("56 8B 74 24 08 8A 46 01 8B C8 81 E1 FF 00 00 00 83 F9 03 0F 87 ? ? ? ? FF 24 8D");
         auto fade = hook::pattern("8B 44 24 04 8B C8 C1 E1 04 03 C8 33 C0 8A 04 8D ? ? ? ? C3");

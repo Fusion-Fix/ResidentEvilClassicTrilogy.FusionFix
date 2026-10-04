@@ -1,32 +1,20 @@
-[FUSION FIX OPTIONS]
-FUSION FIX 設定
-
-[Resume]
-ゲームに戻る
-
 [Wobble fix]
-ポリゴンの揺れを修正
+ポリゴンのゆれをなおす
 
 [Widescreen]
-ワイド画面
-
-[Alternate controls]
-操作方法を変更
-
-[Keyboard movement]
-キーボードの移動
+ワイドがめん
 
 [Skip intro]
 イントロをスキップ
 
 [Skip doors]
-ドア演出をスキップ
+ドアえんしゅつをスキップ
 
 [Fast load]
-高速ロード
+こうそくロード
 
 [Auto load]
-自動ロード
+じどうロード
 
 [Load slot]
 セーブスロット
@@ -35,10 +23,10 @@ FUSION FIX 設定
 ゲームをロード
 
 [Exit game]
-ゲームを終了
+ゲームをしゅうりょう
 
 [Quit the game?]
-ゲームを終了しますか？
+ゲームをしゅうりょうしますか？
 
 [Yes]
 はい
@@ -56,19 +44,160 @@ FUSION FIX 設定
 スロット
 
 [Latest]
-最新
+さいしん
 
 [Hold: run]
-押す間：走る
+おすあいだ：はしる
 
 [Toggle: run]
-切替：走る
+きりかえ：はしる
 
 [Hold: walk]
-押す間：歩く
+おすあいだ：あるく
 
 [Toggle: walk]
-切替：歩く
+きりかえ：あるく
 
-[Navigate / Change / Confirm / Back]
-移動／変更／決定／戻る
+[PAUSE]
+ポーズ
+
+[Continue]
+ゲームにもどる
+
+[Control type]
+そうさタイプ
+
+[Shift key]
+Shiftキー
+
+[Display]
+がめんせってい
+
+[Controls]
+そうさせってい
+
+[Game options]
+ゲームせってい
+
+[Return]
+もどる
+
+[Alternate]
+アレンジ
+
+[Original]
+オリジナル
+
+[Return to the game.]
+ゲームをさいかいします。
+
+[Load the save selected in Game options.]
+ゲームせっていでえらんだセーブをロードします。
+
+[Loading is available from the title screen.]
+ロードはタイトルがめんでりようできます。
+
+[Return there to load a saved game.]
+タイトルがめんからロードしてください。
+
+[Fill the screen with a moving camera view.]
+カメラをうごかしてワイドがめんにあわせます。
+
+[Menus retain their original proportions.]
+メニューのたてよこひはもとのままです。
+
+[Original: turn and move relative to the player.]
+オリジナル：キャラクターきじゅんでいどうします。
+
+[Alternate: move in the direction you press.]
+アレンジ：にゅうりょくしたがめんほうこうへいどうします。
+
+[Choose how Shift switches walking and running.]
+Shiftキーによるほこうとそうこうのきりかえほうほうです。
+
+[Applies to alternate keyboard controls.]
+キーボードのアレンジそうさにてきようされます。
+
+[Go straight to the title menu on startup.]
+きどうじにタイトルメニューへすすみます。
+
+[Story movies are still played.]
+ストーリーのムービーはさいせいされます。
+
+[Skip door animations between rooms.]
+へやいどうじのドアえんしゅつをスキップします。
+
+[The next room still loads normally.]
+つぎのへやのよみこみはつうじょうどおりおこないます。
+
+[Skip the recap text after loading a save.]
+ロードごのあらすじをスキップします。
+
+[Story dialogue is unaffected.]
+ストーリーのかいわにはえいきょうしません。
+
+[Load the selected save when the game starts.]
+きどうじにせんたくしたセーブをロードします。
+
+[If unavailable, show the save selection.]
+みつからないばあいはセーブせんたくをひょうじします。
+
+[Choose the save used by Load game and Auto load.]
+ロードとじどうロードにつかうセーブをえらびます。
+
+[Latest selects the most recently saved file.]
+さいしんはこうしんにちじがもっともあたらしいファイルです。
+
+[Exit the game.]
+ゲームをしゅうりょうします。
+
+[Unsaved progress will be lost.]
+ほぞんしていないしんこうじょうきょうはうしなわれます。
+
+[Stabilize character and object geometry.]
+キャラクターとオブジェクトのかたちをあんていさせます。
+
+[Reduces the original polygon wobble.]
+もとのポリゴンのゆれをけいげんします。
+
+[Adjust the picture and camera view.]
+がめんとカメラひょうじをせっていします。
+
+[Choose movement and keyboard run controls.]
+いどうほうほうとキーボードのそうこうそうさをせっていします。
+
+[Adjust startup, room transitions and loading.]
+きどう・へやいどう・ロードのどうさをせっていします。
+
+[Changes are saved automatically.]
+せっていのへんこうはじどうてきにほぞんされます。
+
+[Return to the pause menu.]
+ポーズメニューにもどります。
+
+[Choose Yes to exit, or No to keep playing.]
+しゅうりょうするばあいは「はい」をえらんでください。
+
+[D-pad: select / change]
+ほうこうキー：せんたく・へんこう
+
+[D-pad / Stick: select]
+ほうこうキー・スティック：せんたく
+
+[Up/Down: select   Left/Right: change]
+うえした：せんたく　ひだりみぎ：へんこう
+
+[Up/Down: select]
+うえした：せんたく
+
+[A: confirm   B: back]
+A：けってい　B：もどる
+
+[Button 1: confirm   Button 2: back]
+ボタン1：けってい　ボタン2：もどる
+
+[Enter: confirm   Esc: back]
+Enter：けってい　Esc：もどる
+
+[Left/Right: select]
+ひだりみぎ：せんたく

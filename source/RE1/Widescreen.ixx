@@ -230,8 +230,11 @@ namespace RE1Presentation
     HRESULT WINAPI Matrix(IDirect3DDevice* device, D3DMATRIXHANDLE handle, D3DMATRIX* matrix)
     {
         if (!context.renderer || !matrix || (handle != Read<D3DMATRIXHANDLE>(context.renderer, layout.worldHandle)
-            && handle != Read<D3DMATRIXHANDLE>(context.renderer, layout.spriteHandle)))
+            && (layout.japanese || handle != Read<D3DMATRIXHANDLE>(context.renderer, layout.spriteHandle))))
             return shMatrix.unsafe_stdcall<HRESULT>(device, handle, matrix);
+        // Japanese packets reuse the sprite matrix for WORLD and VIEW, with
+        // the world matrix as PROJECTION. Correct only PROJECTION there so
+        // fitting the image is applied once rather than three times.
         const float width = float(Read<int>(context.renderer, layout.width)), height = float(Read<int>(context.renderer, layout.height));
         const auto viewport = Presentation::Viewport::Scene(width, height, ClassicGame::GetSettings().maxAspectRatio);
         const auto transform = context.full ? Presentation::Transform{ viewport.width / width, viewport.height / height, viewport.x, viewport.y }
@@ -266,8 +269,9 @@ namespace RE1Presentation
         const bool fade = !texture && left <= 0 && top <= 0 && right >= 319 && bottom >= 239;
         const bool change = fade || (text && context.crop);
         auto* device = Read<IDirect3DDevice*>(renderer, layout.device);
-        const auto projection = Read<D3DMATRIXHANDLE>(renderer, layout.spriteHandle);
-        auto* matrix = reinterpret_cast<D3DMATRIX*>(static_cast<uint8_t*>(renderer) + layout.spriteMatrix);
+        const auto projection = Read<D3DMATRIXHANDLE>(renderer, layout.japanese ? layout.worldHandle : layout.spriteHandle);
+        auto* matrix = reinterpret_cast<D3DMATRIX*>(static_cast<uint8_t*>(renderer)
+            + (layout.japanese ? layout.worldMatrix : layout.spriteMatrix));
         if (change && device)
         {
             context.crop = fade ? context.crop : false;

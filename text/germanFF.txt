@@ -1,20 +1,8 @@
-[FUSION FIX OPTIONS]
-FUSION FIX OPTIONEN
-
-[Resume]
-Fortsetzen
-
 [Wobble fix]
 Polygonzittern beheben
 
 [Widescreen]
 Breitbild
-
-[Alternate controls]
-Alternative Steuerung
-
-[Keyboard movement]
-Tastaturbewegung
 
 [Skip intro]
 Intro überspringen
@@ -70,5 +58,146 @@ Halten: Geh
 [Toggle: walk]
 Wechsel: Geh
 
-[Navigate / Change / Confirm / Back]
-Navigieren / Ändern / OK / Zurück
+[PAUSE]
+PAUSE
+
+[Continue]
+Fortsetzen
+
+[Control type]
+Steuerungsart
+
+[Shift key]
+Umschalttaste
+
+[Display]
+Anzeige
+
+[Controls]
+Steuerung
+
+[Game options]
+Spieloptionen
+
+[Return]
+Zurück
+
+[Alternate]
+Alternativ
+
+[Original]
+Original
+
+[Return to the game.]
+Zum Spiel zurückkehren.
+
+[Load the save selected in Game options.]
+Den in Spieloptionen gewählten Spielstand laden.
+
+[Loading is available from the title screen.]
+Laden ist im Titelmenü verfügbar.
+
+[Return there to load a saved game.]
+Dort einen gespeicherten Spielstand laden.
+
+[Fill the screen with a moving camera view.]
+Das Bild mit einer beweglichen Kamera anpassen.
+
+[Menus retain their original proportions.]
+Menüs behalten ihre ursprünglichen Proportionen.
+
+[Original: turn and move relative to the player.]
+Original: relativ zur Figur drehen und bewegen.
+
+[Alternate: move in the direction you press.]
+Alternativ: in die gedrückte Richtung bewegen.
+
+[Choose how Shift switches walking and running.]
+Gehen und Laufen mit der Umschalttaste steuern.
+
+[Applies to alternate keyboard controls.]
+Gilt für die alternative Tastatursteuerung.
+
+[Go straight to the title menu on startup.]
+Beim Start direkt zum Titelmenü wechseln.
+
+[Story movies are still played.]
+Handlungsfilme werden weiterhin abgespielt.
+
+[Skip door animations between rooms.]
+Türanimationen zwischen Räumen überspringen.
+
+[The next room still loads normally.]
+Der nächste Raum wird normal geladen.
+
+[Skip the recap text after loading a save.]
+Rückblicktext nach dem Laden überspringen.
+
+[Story dialogue is unaffected.]
+Dialoge der Handlung bleiben unverändert.
+
+[Load the selected save when the game starts.]
+Beim Start den gewählten Spielstand laden.
+
+[If unavailable, show the save selection.]
+Falls nicht verfügbar, die Speicherauswahl zeigen.
+
+[Choose the save used by Load game and Auto load.]
+Spielstand für Laden und automatisches Laden wählen.
+
+[Latest selects the most recently saved file.]
+Neuester wählt die zuletzt gespeicherte Datei.
+
+[Exit the game.]
+Das Spiel beenden.
+
+[Unsaved progress will be lost.]
+Ungespeicherter Fortschritt geht verloren.
+
+[Stabilize character and object geometry.]
+Geometrie von Figuren und Objekten stabilisieren.
+
+[Reduces the original polygon wobble.]
+Reduziert das ursprüngliche Polygonzittern.
+
+[Adjust the picture and camera view.]
+Bild und Kameraansicht einstellen.
+
+[Choose movement and keyboard run controls.]
+Bewegung und Laufen per Tastatur einstellen.
+
+[Adjust startup, room transitions and loading.]
+Start, Raumwechsel und Laden einstellen.
+
+[Changes are saved automatically.]
+Änderungen werden automatisch gespeichert.
+
+[Return to the pause menu.]
+Zum Pausenmenü zurückkehren.
+
+[Choose Yes to exit, or No to keep playing.]
+Ja zum Beenden, Nein zum Weiterspielen.
+
+[D-pad: select / change]
+Steuerkreuz: wählen / ändern
+
+[D-pad / Stick: select]
+Steuerkreuz / Stick: wählen
+
+[Up/Down: select   Left/Right: change]
+Oben/Unten: wählen   Links/Rechts: ändern
+
+[Up/Down: select]
+Oben/Unten: wählen
+
+[A: confirm   B: back]
+A: bestätigen   B: zurück
+
+[Button 1: confirm   Button 2: back]
+Taste 1: bestätigen   Taste 2: zurück
+
+[Enter: confirm   Esc: back]
+Eingabe: bestätigen   Esc: zurück
+
+[Left/Right: select]
+Links/Rechts: wählen

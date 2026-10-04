@@ -1,20 +1,8 @@
-[FUSION FIX OPTIONS]
-FUSION FIX OPTIONS
-
-[Resume]
-Resume
-
 [Wobble fix]
 Wobble fix
 
 [Widescreen]
 Widescreen
-
-[Alternate controls]
-Alternate controls
-
-[Keyboard movement]
-Keyboard movement
 
 [Skip intro]
 Skip intro
@@ -70,5 +58,149 @@ Hold: walk
 [Toggle: walk]
 Toggle: walk
 
-[Navigate / Change / Confirm / Back]
-Navigate / Change / Confirm / Back
+[PAUSE]
+PAUSE
+
+[Continue]
+Continue
+
+[Control type]
+Control type
+
+[Shift key]
+Shift key
+
+[Display]
+Display
+
+[Controls]
+Controls
+
+[Game options]
+Game options
+
+[Return]
+Return
+
+[Alternate]
+Alternate
+
+[Original]
+Original
+
+[Return to the game.]
+Return to the game.
+
+[Load the save selected in Game options.]
+Load the save selected in Game options.
+
+[Loading is available from the title screen.]
+Loading is available from the title screen.
+
+[Return there to load a saved game.]
+Return there to load a saved game.
+
+[Fill the screen with a moving camera view.]
+Fill the screen with a moving camera view.
+
+[Menus retain their original proportions.]
+Menus retain their original proportions.
+
+[Original: turn and move relative to the player.]
+Original: turn and move relative to the player.
+
+[Alternate: move in the direction you press.]
+Alternate: move in the direction you press.
+
+[Choose how Shift switches walking and running.]
+Choose how Shift switches walking and running.
+
+[Applies to alternate keyboard controls.]
+Applies to alternate keyboard controls.
+
+[Go straight to the title menu on startup.]
+Go straight to the title menu on startup.
+
+[Story movies are still played.]
+Story movies are still played.
+
+[Skip door animations between rooms.]
+Skip door animations between rooms.
+
+[The next room still loads normally.]
+The next room still loads normally.
+
+[Skip the recap text after loading a save.]
+Skip the recap text after loading a save.
+
+[Story dialogue is unaffected.]
+Story dialogue is unaffected.
+
+[Load the selected save when the game starts.]
+Load the selected save when the game starts.
+
+[If unavailable, show the save selection.]
+If unavailable, show the save selection.
+
+[Choose the save used by Load game and Auto load.]
+Choose the save used by Load game and Auto load.
+
+[Latest selects the most recently saved file.]
+Latest selects the most recently saved file.
+
+[Exit the game.]
+Exit the game.
+
+[Unsaved progress will be lost.]
+Unsaved progress will be lost.
+
+[Stabilize character and object geometry.]
+Stabilize character and object geometry.
+
+[Reduces the original polygon wobble.]
+Reduces the original polygon wobble.
+
+[Adjust the picture and camera view.]
+Adjust the picture and camera view.
+
+[Choose movement and keyboard run controls.]
+Choose movement and keyboard run controls.
+
+[Adjust startup, room transitions and loading.]
+Adjust startup, room transitions and loading.
+
+[Changes are saved automatically.]
+Changes are saved automatically.
+
+[Return to the pause menu.]
+Return to the pause menu.
+
+[Choose Yes to exit, or No to keep playing.]
+Choose Yes to exit, or No to keep playing.
+
+[D-pad: select / change]
+D-pad: select / change
+
+[D-pad / Stick: select]
+D-pad / Stick: select
+
+[Up/Down: select   Left/Right: change]
+Up/Down: select   Left/Right: change
+
+[Up/Down: select]
+Up/Down: select
+
+[A: confirm   B: back]
+A: confirm   B: back
+
+[Button 1: confirm   Button 2: back]
+Button 1: confirm   Button 2: back
+
+[Enter: confirm   Esc: back]
+Enter: confirm   Esc: back
+
+[Left/Right: select]
+Left/Right: select
+
+[Left/Right: select]
+Left/Right: select

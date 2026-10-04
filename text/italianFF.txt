@@ -1,20 +1,8 @@
-[FUSION FIX OPTIONS]
-OPZIONI FUSION FIX
-
-[Resume]
-Riprendi
-
 [Wobble fix]
 Correzione tremolio
 
 [Widescreen]
 Schermo panoramico
-
-[Alternate controls]
-Comandi alternativi
-
-[Keyboard movement]
-Movimento tastiera
 
 [Skip intro]
 Salta introduzione
@@ -70,5 +58,146 @@ Tieni: cammina
 [Toggle: walk]
 Premi: cammina
 
-[Navigate / Change / Confirm / Back]
-Naviga / Modifica / Conferma / Indietro
+[PAUSE]
+PAUSA
+
+[Continue]
+Continua
+
+[Control type]
+Tipo di comandi
+
+[Shift key]
+Tasto Maiusc
+
+[Display]
+Schermo
+
+[Controls]
+Comandi
+
+[Game options]
+Opzioni di gioco
+
+[Return]
+Indietro
+
+[Alternate]
+Alternativi
+
+[Original]
+Originali
+
+[Return to the game.]
+Torna alla partita.
+
+[Load the save selected in Game options.]
+Carica il salvataggio scelto nelle opzioni.
+
+[Loading is available from the title screen.]
+Puoi caricare dalla schermata del titolo.
+
+[Return there to load a saved game.]
+Torna lì per caricare una partita.
+
+[Fill the screen with a moving camera view.]
+Riempi lo schermo con una visuale mobile.
+
+[Menus retain their original proportions.]
+I menu mantengono le proporzioni originali.
+
+[Original: turn and move relative to the player.]
+Originali: gira e muoviti rispetto al personaggio.
+
+[Alternate: move in the direction you press.]
+Alternativi: muoviti nella direzione premuta.
+
+[Choose how Shift switches walking and running.]
+Scegli come Maiusc cambia tra passo e corsa.
+
+[Applies to alternate keyboard controls.]
+Per i comandi alternativi da tastiera.
+
+[Go straight to the title menu on startup.]
+Vai direttamente al menu del titolo all’avvio.
+
+[Story movies are still played.]
+I filmati della storia vengono riprodotti.
+
+[Skip door animations between rooms.]
+Salta le animazioni delle porte tra le stanze.
+
+[The next room still loads normally.]
+La stanza seguente viene caricata normalmente.
+
+[Skip the recap text after loading a save.]
+Salta il riepilogo dopo il caricamento.
+
+[Story dialogue is unaffected.]
+I dialoghi della storia restano invariati.
+
+[Load the selected save when the game starts.]
+Carica il salvataggio scelto all’avvio.
+
+[If unavailable, show the save selection.]
+Se assente, mostra la scelta dei salvataggi.
+
+[Choose the save used by Load game and Auto load.]
+Scegli il salvataggio per il caricamento anche automatico.
+
+[Latest selects the most recently saved file.]
+Recente sceglie il file salvato più di recente.
+
+[Exit the game.]
+Esci dal gioco.
+
+[Unsaved progress will be lost.]
+I progressi non salvati andranno persi.
+
+[Stabilize character and object geometry.]
+Stabilizza la geometria di personaggi e oggetti.
+
+[Reduces the original polygon wobble.]
+Riduce il tremolio originale dei poligoni.
+
+[Adjust the picture and camera view.]
+Regola l’immagine e la visuale.
+
+[Choose movement and keyboard run controls.]
+Scegli i comandi di movimento e corsa da tastiera.
+
+[Adjust startup, room transitions and loading.]
+Regola avvio, cambio stanza e caricamento.
+
+[Changes are saved automatically.]
+Le modifiche vengono salvate automaticamente.
+
+[Return to the pause menu.]
+Torna al menu di pausa.
+
+[Choose Yes to exit, or No to keep playing.]
+Sì per uscire, No per continuare.
+
+[D-pad: select / change]
+Croce: scegli / modifica
+
+[D-pad / Stick: select]
+Croce / Stick: scegli
+
+[Up/Down: select   Left/Right: change]
+Su/Giù: scegli   Sinistra/Destra: modifica
+
+[Up/Down: select]
+Su/Giù: scegli
+
+[A: confirm   B: back]
+A: conferma   B: indietro
+
+[Button 1: confirm   Button 2: back]
+Tasto 1: conferma   Tasto 2: indietro
+
+[Enter: confirm   Esc: back]
+Invio: conferma   Esc: indietro
+
+[Left/Right: select]
+Sinistra/Destra: scegli

@@ -86,7 +86,7 @@ The **RE3-only wobble fix** preserves subpixel model coordinates to reduce visib
 
 ### Settings without leaving the game
 
-Press **Esc** or controller **Start** to open the Fusion Fix menu. Change presentation, controls, skipping, and loading options while playing. Menu changes are saved to the INI, and the menu follows the game's language.
+Press **Esc** or controller **Start** to pause. Each game has its own menu styling, with **Display**, **Controls**, and **Game options** pages. The selected item explains its effect, and the button hints follow keyboard or controller input. Changes are saved automatically to the INI, and all menu text follows the game's language. **Esc / B** returns to the previous page; **Start** resumes the game.
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/Fusion-Fix/ResidentEvilClassicTrilogy.FusionFix/refs/heads/main/.github/docs/video/fusion-fix-menu.webp" width="960" alt="The Fusion Fix menu: presentation, controls, and loading options">
@@ -94,7 +94,7 @@ Press **Esc** or controller **Start** to open the Fusion Fix menu. Change presen
 
 | Shortcut | Action |
 |:--|:--|
-| **Esc / controller Start** | Open or close the Fusion Fix menu |
+| **Esc / controller Start** | Open the pause menu; Esc goes back, Start resumes |
 | **F2** | Toggle the wobble fix in RE3 |
 | **F3** | Toggle widescreen / 4:3 |
 | **F4** | Toggle alternate controls |

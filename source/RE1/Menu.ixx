@@ -48,6 +48,7 @@ namespace RE1Menu
 
     void Init()
     {
+        ClassicMenu::style = 1;
         auto frame = hook::pattern("? ? ? ? ? ? ? 53 56 57 55 75 04 6A 00 EB 02 6A 01 E8");
         auto window = hook::pattern("53 56 57 55 74 ? 8B 44 24 60 8B 5C 24 5C 8B 7C 24 58");
         auto flip = hook::pattern("56 FF 05 ? ? ? ? E8 ? ? ? ? FF 15 ? ? ? ? 83 3D ? ? ? ? 00 8B F0 E9");

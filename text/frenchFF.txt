@@ -1,20 +1,8 @@
-[FUSION FIX OPTIONS]
-OPTIONS FUSION FIX
-
-[Resume]
-Reprendre
-
 [Wobble fix]
 Anti-tremblement
 
 [Widescreen]
 Écran large
-
-[Alternate controls]
-Commandes alternatives
-
-[Keyboard movement]
-Déplacement clavier
 
 [Skip intro]
 Passer l’intro
@@ -70,5 +58,149 @@ Maint.: marcher
 [Toggle: walk]
 Basc.: marcher
 
-[Navigate / Change / Confirm / Back]
-Naviguer / Modifier / Valider / Retour
+[PAUSE]
+PAUSE
+
+[Continue]
+Reprendre
+
+[Control type]
+Type de commandes
+
+[Shift key]
+Touche Maj
+
+[Display]
+Affichage
+
+[Controls]
+Commandes
+
+[Game options]
+Options de jeu
+
+[Return]
+Retour
+
+[Alternate]
+Alternatives
+
+[Original]
+Classiques
+
+[Return to the game.]
+Reprendre la partie.
+
+[Load the save selected in Game options.]
+Charger la sauvegarde choisie dans les options.
+
+[Loading is available from the title screen.]
+Le chargement est disponible à l’écran titre.
+
+[Return there to load a saved game.]
+Revenez-y pour charger une partie.
+
+[Fill the screen with a moving camera view.]
+Adapter l’image avec une caméra mobile.
+
+[Menus retain their original proportions.]
+Les menus gardent leurs proportions d’origine.
+
+[Original: turn and move relative to the player.]
+Classiques : tourner et avancer avec le personnage.
+
+[Alternate: move in the direction you press.]
+Alternatives : aller dans la direction choisie.
+
+[Choose how Shift switches walking and running.]
+Choisir comment Maj alterne marche et course.
+
+[Applies to alternate keyboard controls.]
+Pour les commandes clavier alternatives.
+
+[Go straight to the title menu on startup.]
+Aller directement au menu titre au démarrage.
+
+[Story movies are still played.]
+Les vidéos de l’histoire restent actives.
+
+[Skip door animations between rooms.]
+Passer les animations de porte entre les pièces.
+
+[The next room still loads normally.]
+La pièce suivante se charge normalement.
+
+[Skip the recap text after loading a save.]
+Passer le résumé après le chargement.
+
+[Story dialogue is unaffected.]
+Les dialogues de l’histoire restent intacts.
+
+[Load the selected save when the game starts.]
+Charger la sauvegarde choisie au démarrage.
+
+[If unavailable, show the save selection.]
+Sinon, afficher le choix des sauvegardes.
+
+[Choose the save used by Load game and Auto load.]
+Choisir la sauvegarde à charger manuellement ou au départ.
+
+[Latest selects the most recently saved file.]
+Dernière choisit le fichier sauvegardé le plus récent.
+
+[Exit the game.]
+Quitter le jeu.
+
+[Unsaved progress will be lost.]
+La progression non sauvegardée sera perdue.
+
+[Stabilize character and object geometry.]
+Stabiliser les personnages et les objets.
+
+[Reduces the original polygon wobble.]
+Réduit le tremblement des polygones d’origine.
+
+[Adjust the picture and camera view.]
+Régler l’image et le cadrage.
+
+[Choose movement and keyboard run controls.]
+Choisir le déplacement et la course au clavier.
+
+[Adjust startup, room transitions and loading.]
+Régler le démarrage, les portes et le chargement.
+
+[Changes are saved automatically.]
+Les changements sont sauvegardés automatiquement.
+
+[Return to the pause menu.]
+Revenir au menu de pause.
+
+[Choose Yes to exit, or No to keep playing.]
+Oui pour quitter, Non pour continuer.
+
+[D-pad: select / change]
+Croix : sélectionner / modifier
+
+[D-pad / Stick: select]
+Croix / Stick : sélectionner
+
+[Up/Down: select   Left/Right: change]
+Haut/Bas : choisir   Gauche/Droite : modifier
+
+[Up/Down: select]
+Haut/Bas : sélectionner
+
+[A: confirm   B: back]
+A : valider   B : retour
+
+[Button 1: confirm   Button 2: back]
+Bouton 1 : valider   Bouton 2 : retour
+
+[Enter: confirm   Esc: back]
+Entrée : valider   Échap : retour
+
+[Left/Right: select]
+Gauche/Droite : choisir
+
+[Left/Right: select]
+Gauche/Droite : choisir

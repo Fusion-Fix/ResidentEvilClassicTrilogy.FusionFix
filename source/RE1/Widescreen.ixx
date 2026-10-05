@@ -36,8 +36,16 @@ namespace RE1Presentation
     void* view = nullptr;
     uint8_t* fontTextures = nullptr;
     void** tasks = nullptr;
+    uint8_t* taskRecords = nullptr;
     void* titleTask = nullptr;
     void* inventoryTask = nullptr;
+    bool ActiveTask(int slot, void* entry)
+    {
+        // Ending a native task clears its status, but retains its entry point.
+        // The controls screen leaves the inventory entry in slot 1 until the
+        // next room change; that stale pointer must not keep menu semantics.
+        return tasks[slot] == entry && (Read<uint16_t>(taskRecords, slot * 124) & 3) != 0;
+    }
     uint8_t* camera = nullptr;
     bool roomDrawn = false;
     // Japanese MarniSystem uses a different class and packet layout.
@@ -325,7 +333,7 @@ namespace RE1Presentation
         // Follow the active native task: the inventory request flag is cleared
         // when its UI opens and cannot identify the displayed screen.
         context = { renderer, ClassicGame::Enabled(ClassicGame::Option::PanAndScan)
-            && roomDrawn && tasks[0] != titleTask && tasks[1] != inventoryTask };
+            && roomDrawn && !ActiveTask(0, titleTask) && !ActiveTask(1, inventoryTask) };
         const auto viewport = Presentation::Viewport::Scene(float(Read<int>(renderer, layout.width)), float(Read<int>(renderer, layout.height)),
             ClassicGame::GetSettings().maxAspectRatio);
         const auto cameraKey = Read<uint32_t>(camera) & 0xFFFFFF;
@@ -368,6 +376,7 @@ namespace RE1Presentation
         auto actor = hook::pattern("C7 05 ? ? ? ? ? ? ? ? F6 05 ? ? ? ? 01 74 ? 33 C0 A0 ? ? ? ? FF 14 85");
         auto background = hook::pattern("53 33 C9 56 8B 15 ? ? ? ? 57 55 8D 1C 92 8D 14 5A C1 E2 04 8D BA ? ? ? ? 8B C7 83 38 00");
         auto task = hook::pattern("8B 0D ? ? ? ? 8B 44 24 04 8B 15 ? ? ? ? 89 04 8D ? ? ? ? 66 C7 02 02 00 E9");
+        auto taskStart = hook::pattern("8B 44 24 08 8B 4C 24 04 89 04 8D ? ? ? ? 8B C1 C1 E0 05 2B C1 66 C7 04 85 ? ? ? ? 02 00 C3");
         auto title = hook::pattern("83 EC 08 81 25 ? ? ? ? FF FF FE FF 53 56 33 DB 53 89 1D ? ? ? ? 53 89 1D");
         auto inventoryScreen = hook::pattern("81 EC B0 01 00 00 53 56 57 33 DB 89 5C 24 1C 55 89 5C 24 24 89 5C 24 2C");
         auto matrix = hook::pattern("68 ? ? ? ? 03 C2 68 ? ? ? ? C1 F8 02 8D 4C 24 ? 66 89 44 24 ? 51 E8");
@@ -397,7 +406,7 @@ namespace RE1Presentation
             movieFrame = hook::pattern("81 EC 00 01 00 00 A1 ? ? ? ? 83 3D ? ? ? ? 00 56 57 0F 84 ? ? ? ? 85 C0 74 1B 83 F8 01");
         if (mode.size() != 1 || render.size() != 1 || actor.size() != 1 || matrix.size() != 1
             || sprite.size() != 1 || fonts.size() != 1 || room.size() != 1
-            || background.size() != 1 || task.size() != 1 || title.size() != 1 || inventoryScreen.size() != 1) return;
+            || background.size() != 1 || task.size() != 1 || taskStart.size() != 1 || title.size() != 1 || inventoryScreen.size() != 1) return;
         const auto display = Presentation::OutputDisplaySize();
         if (!display.width || !display.height) return;
         outputWidth = display.width; outputHeight = display.height;
@@ -405,9 +414,10 @@ namespace RE1Presentation
         view = *matrix.get_first<void*>(1);
         fontTextures = *fonts.get_first<uint8_t*>(2);
         tasks = *task.get_first<void**>(19);
+        taskRecords = *taskStart.get_first<uint8_t*>(26);
         titleTask = title.get_first();
         inventoryTask = inventoryScreen.get_first();
-        ClassicInput::nativeMenu = []() { return tasks[1] == inventoryTask; };
+        ClassicInput::nativeMenu = []() { return ActiveTask(1, inventoryTask); };
         camera = *room.get_first<uint8_t*>(2);
         shMode = safetyhook::create_mid(mode.get_first(), Mode);
         shBackground = safetyhook::create_inline(background.get_first(), Background);

@@ -15,9 +15,7 @@ namespace RE2Controls
 {
     using ClassicMemory::Read;
     using ClassicMemory::Write;
-    SafetyHookInline shMovement, shInput, shLegacyMap, shDirectionCheck;
-    uint32_t mappedDirection = 0;
-    bool directionRemapped = false;
+    SafetyHookInline shMovement, shInput, shLegacyMap;
     bool waitForInputRelease = false;
     uint32_t* legacyInput = nullptr;
     uint32_t legacyPacket = 0;
@@ -31,7 +29,6 @@ namespace RE2Controls
 
     int __cdecl Input()
     {
-        directionRemapped = false;
         legacyPacket = 0;
         const auto native = shInput.unsafe_ccall<int>();
         const auto input = ClassicInput::HDPacket(2, uint16_t(native), legacyInput ? uint16_t(*legacyInput) : uint16_t(legacyPacket));
@@ -92,8 +89,8 @@ namespace RE2Controls
         const auto originalHeld = *held, originalPressed = *pressed;
         const auto& pad = ClassicInput::pad;
         const bool ownPlayer = *game && player == static_cast<uint8_t*>(*game) + 14864 && !(*control & 0x2000);
-        if (ownPlayer) directionRemapped = false;
         const auto routine = Read<uint8_t>(player, 5);
+        const bool pushing = routine == 10;
         const bool recovering = routine == 9 && Read<uint8_t>(player, 7) > 4;
         if (ownPlayer) actions.Update(ClassicInput::HDState());
         const bool hd = ClassicGame::GetSettings().hdControls && !ClassicInput::gameInputSuppressed;
@@ -117,46 +114,39 @@ namespace RE2Controls
             heading.Reset(); moving = false;
         }
         else if (ownPlayer && ClassicGame::Enabled(ClassicGame::Option::AlternateControls)
-            && Read<uint8_t>(player, 4) == 1 && (routine <= 4 || recovering) && !(originalHeld & 0x100))
+            && Read<uint8_t>(player, 4) == 1 && (routine <= 4 || recovering || pushing) && !(originalHeld & 0x100))
         {
             const bool stick = pad.connected && pad.left.Moving();
             const auto direction = stick ? pad.left : Presentation::Direction::Digital(originalHeld);
             const bool run = ClassicInput::Run(direction, stick);
-            directionRemapped = true;
-            *held = originalHeld & ~0x20Fu;
-            *pressed = originalPressed & ~0x20Fu;
+            *held = originalHeld & ~0x21Fu;
+            *pressed = originalPressed & ~0x21Fu;
             if (direction.Moving())
             {
-                const auto yaw = heading.Update(direction, float(Read<int16_t>(view)), float(Read<int16_t>(view, 4)));
-                Write(player, 118, yaw);
-                if (routine == 3 || routine == 4) Write(player, 4, uint32_t(1));
-                *held |= 1u | (run ? 0x200u : 0u);
-                if (!moving) *pressed |= 1;
-                moving = true;
+                const auto nextYaw = heading.Update(direction, float(Read<int16_t>(view)), float(Read<int16_t>(view, 4)));
+                // Pushing uses bit 0x10, not the walk bit alone. Keep the
+                // native alignment animation in charge of yaw while pushing,
+                // and release the object when input points away from it.
+                const int difference = ((int(nextYaw) - int(yaw) + 2048) & 4095) - 2048;
+                const bool forward = !pushing || std::abs(difference) < 1024;
+                if (!pushing)
+                {
+                    Write(player, 118, nextYaw);
+                    if (routine == 3 || routine == 4) Write(player, 4, uint32_t(1));
+                }
+                if (forward)
+                {
+                    *held |= 0x11u | (!pushing && run ? 0x200u : 0u);
+                    if (!moving) *pressed |= 0x11;
+                }
+                moving = forward;
             }
             else { heading.Reset(); moving = false; }
         }
         else { heading.Reset(); moving = false; }
-        if (ownPlayer && directionRemapped) mappedDirection = *held & 15u;
         const auto result = shMovement.unsafe_ccall<uintptr_t>(player);
         *held = originalHeld;
         *pressed = originalPressed;
-        return result;
-    }
-
-    int __cdecl DirectionCheck(void* task)
-    {
-        const auto* instruction = Read<uint8_t*>(task, 28);
-        const auto mask = Read<uint16_t>(instruction, 2);
-        const auto original = *held;
-        // Pushable objects use the script KEY_CK opcode after player movement.
-        // Only direction-only checks consume the remapped movement packet.
-        if (directionRemapped && mask && !(mask & ~15u)
-            && ClassicGame::Enabled(ClassicGame::Option::AlternateControls)
-            && !ClassicInput::gameInputSuppressed && !(*control & 0x2000))
-            *held = (original & ~15u) | mappedDirection;
-        const auto result = shDirectionCheck.unsafe_ccall<int>(task);
-        *held = original;
         return result;
     }
 
@@ -242,14 +232,6 @@ namespace RE2Controls
             }
         }
         shMovement = safetyhook::create_inline(movement.get_first(), Movement);
-        auto directionCheck = hook::pattern("56 8B 74 24 08 33 C0 33 D2 8B 4E 1C 8A 41 01 66 8B 51 02 83 C1 04 89 4E 1C 8B 0D ? ? ? ? 85 CA 75 03 83 F0 01 5E C3");
-        // KEY_CK and KEY_TRG have identical code apart from the input address.
-        for (size_t i = 0; i < directionCheck.size(); ++i)
-        {
-            auto* code = directionCheck.get(i).get<uint8_t>();
-            if (Read<uint32_t*>(code, 27) == held)
-                shDirectionCheck = safetyhook::create_inline(code, DirectionCheck);
-        }
     }
 }
 

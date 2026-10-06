@@ -201,3 +201,12 @@ Enter：けってい　Esc：もどる
 
 [Left/Right: select]
 ひだりみぎ：せんたく
+
+[Auto push]
+じどうプッシュ
+
+[Push objects without releasing the run button.]
+はしるボタンをはなさずにものをおします。
+
+[Applies to alternate movement controls.]
+そうさタイプがべつのときにゆうこうです。

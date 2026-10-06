@@ -137,6 +137,7 @@ Edit the matching INI in `plugins/`, or use the in-game menu. The defaults keep 
 | `MaxAspectRatio` | `16:9` | INI-only widescreen limit; accepts a ratio or decimal |
 | `HDControls` | `1` | Remaster keyboard / XInput bindings, quick turn and manual reload; restart after changing |
 | `AlternateControls` | `0` | Screen-relative keyboard and left-stick movement |
+| `AutoPush` | `1` | RE2/RE3 only: alternate controls automatically switch from running to native-speed pushing; `0` requires walking. RE1 already allows pushing while holding run |
 | `KeyboardRunMode` | `0` | Choose Shift hold/toggle behavior; see below |
 | `SkipIntro` | `1` | Skip startup warnings, logos, and the opening movie |
 | `SkipDoor` | `1` | Skip door animations |

@@ -21,6 +21,9 @@ namespace AlternateControls
     Game::State game;
     Presentation::Heading heading;
     bool moving = false;
+    bool pushContact = false;
+    int16_t contactYaw = 0;
+    SafetyHookMid shPushContact;
     int16_t requestedYaw = 0;
     int keyboardRunMode = 0;
     bool shiftHeld = false, runToggled = false, stickRunning = false;
@@ -43,6 +46,8 @@ namespace AlternateControls
         keyboardRunMode = Game::GetSettings().keyboardRunMode.load(std::memory_order_relaxed);
         const auto held = *game.held;
         const auto pressed = *game.pressed;
+        const bool contact = player == game.player && pushContact;
+        if (player == game.player) pushContact = false;
         const auto pad = Input::GetPad();
         const bool shift = Input::ShiftHeld();
         const bool shiftPressed = shift && !shiftHeld;
@@ -135,6 +140,10 @@ namespace AlternateControls
         }
 
         const auto yaw = heading.Update(direction, float(Read<int16_t>(game.view, 0)), float(Read<int16_t>(game.view, 4)));
+        // Only native pushable contact suppresses running. The original walk
+        // handler then enters the push animation at the normal object speed.
+        const int contactDifference = ((int(yaw) - int(contactYaw) + 2048) & 4095) - 2048;
+        if (Game::Enabled(Game::Option::AutoPush) && contact && !stairs && std::abs(contactDifference) < 1024) run = false;
         // Stair handlers still need remapped forward input on every frame.
         // Let the stair animation align the character while input is held.
         // Small analog noise must not restart that alignment each frame.
@@ -175,6 +184,18 @@ namespace AlternateControls
             canReload = reinterpret_cast<decltype(canReload)>(reload.get_first());
         }
         CIniReader reader("");
+        auto contact = hook::pattern("8A 91 C0 00 00 00 8D 81 C0 00 00 00 66 8B 71 3C FE C2 88 10 8A 18 66 8B 51 34");
+        if (contact.size() == 1)
+            shPushContact = safetyhook::create_mid(contact.get_first(), [](SafetyHookContext&)
+            {
+                // Native collision has already selected a single pushable
+                // object on the player's floor and rejected disabled objects.
+                if (!Game::Enabled(Game::Option::AutoPush) || !moving || Input::suppressUntilRelease || !game.Controllable()
+                    || !Game::Enabled(Game::Option::AlternateControls)
+                    || Read<uint8_t>(game.player, 5) > 2) return;
+                pushContact = true;
+                contactYaw = Read<int16_t>(game.player, 110);
+            });
         keyboardRunMode = std::clamp(reader.ReadInteger("MAIN", "KeyboardRunMode", 0), 0, 3);
         shMovement = safetyhook::create_inline(game.movement, MovementHook);
     }

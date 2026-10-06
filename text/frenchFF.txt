@@ -204,3 +204,12 @@ Gauche/Droite : choisir
 
 [Left/Right: select]
 Gauche/Droite : choisir
+
+[Auto push]
+Poussée auto
+
+[Push objects without releasing the run button.]
+Poussez les objets sans relâcher la touche de course.
+
+[Applies to alternate movement controls.]
+Pour les commandes de déplacement alternatives.

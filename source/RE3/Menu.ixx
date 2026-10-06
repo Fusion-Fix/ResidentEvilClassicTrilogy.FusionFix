@@ -133,8 +133,8 @@ namespace GameMenu
         return loaded;
     }
 
-    constexpr std::array<Game::Option, 7> options = { Game::Option::WobbleFix, Game::Option::PanAndScan, Game::Option::AlternateControls,
-        Game::Option::SkipIntro, Game::Option::SkipDoor, Game::Option::FastLoad, Game::Option::AutoLoad };
+    constexpr std::array<Game::Option, 8> options = { Game::Option::WobbleFix, Game::Option::PanAndScan, Game::Option::AlternateControls,
+        Game::Option::SkipIntro, Game::Option::SkipDoor, Game::Option::FastLoad, Game::Option::AutoLoad, Game::Option::AutoPush };
 
     struct TextTexture
     {
@@ -229,6 +229,7 @@ namespace GameMenu
         case NativeMenu::LoadSlot: return 9;
         case NativeMenu::Load: return 10;
         case NativeMenu::Quit: return 11;
+        case NativeMenu::AutoPush: return 12;
         default: return -1;
         }
     }
@@ -242,7 +243,8 @@ namespace GameMenu
     void Change(int delta)
     {
         const int selection = SelectedRow();
-        if (selection == 4)
+        if (selection == 12) Game::Toggle(Game::Option::AutoPush);
+        else if (selection == 4)
         {
             auto& mode = Game::GetSettings().keyboardRunMode;
             mode = (mode.load() + delta + 4) % 4;
@@ -573,6 +575,7 @@ void Menu::Draw(void* renderer, void* device, void* flat, void* textured)
             case NativeMenu::SkipDoors: return 4;
             case NativeMenu::FastLoad: return 5;
             case NativeMenu::AutoLoad: return 6;
+            case NativeMenu::AutoPush: return 7;
             default: return -1;
             }
         }();

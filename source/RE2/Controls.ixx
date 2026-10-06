@@ -48,6 +48,9 @@ namespace RE2Controls
     void* view = nullptr;
     Presentation::Heading heading;
     bool moving = false;
+    bool pushContact = false;
+    int16_t contactYaw = 0;
+    SafetyHookMid shPushContact;
     HDControls::Actions actions;
     HDControls::QuickTurn quickTurn;
     SafetyHookInline shReload;
@@ -89,6 +92,8 @@ namespace RE2Controls
         const auto originalHeld = *held, originalPressed = *pressed;
         const auto& pad = ClassicInput::pad;
         const bool ownPlayer = *game && player == static_cast<uint8_t*>(*game) + 14864 && !(*control & 0x2000);
+        const bool contact = ownPlayer && pushContact;
+        if (ownPlayer) pushContact = false;
         const auto routine = Read<uint8_t>(player, 5);
         const bool pushing = routine == 10;
         const bool recovering = routine == 9 && Read<uint8_t>(player, 7) > 4;
@@ -124,6 +129,11 @@ namespace RE2Controls
             if (direction.Moving())
             {
                 const auto nextYaw = heading.Update(direction, float(Read<int16_t>(view)), float(Read<int16_t>(view, 4)));
+                // Collision records only native pushable contact. Drop running
+                // while approaching that object so the native hold timer and
+                // walk-to-push transition can run at their original speed.
+                const int contactDifference = ((int(nextYaw) - int(contactYaw) + 2048) & 4095) - 2048;
+                const bool approaching = ClassicGame::Enabled(ClassicGame::Option::AutoPush) && contact && std::abs(contactDifference) < 1024;
                 // Pushing uses bit 0x10, not the walk bit alone. Keep the
                 // native alignment animation in charge of yaw while pushing,
                 // and release the object when input points away from it.
@@ -136,7 +146,7 @@ namespace RE2Controls
                 }
                 if (forward)
                 {
-                    *held |= 0x11u | (!pushing && run ? 0x200u : 0u);
+                    *held |= 0x11u | (!pushing && !approaching && run ? 0x200u : 0u);
                     if (!moving) *pressed |= 0x11;
                 }
                 moving = forward;
@@ -179,6 +189,19 @@ namespace RE2Controls
         view = *matrix.get_first<void*>(1);
         game = *player.get_first<void**>(1);
         control = *gameplay.get_first<uint32_t*>(9);
+        auto contact = hook::pattern("8A 95 44 01 00 00 66 8B 5D 38 FE C2 88 95 44 01 00 00 8A C2 66 8B 55 40");
+        if (contact.size() == 1)
+            shPushContact = safetyhook::create_mid(contact.get_first(), [](SafetyHookContext&)
+            {
+                // This point follows the native single-object, floor, facing
+                // and pushability checks; ordinary wall collisions never reach it.
+                if (!ClassicGame::Enabled(ClassicGame::Option::AutoPush) || !moving || ClassicInput::gameInputSuppressed
+                    || !ClassicGame::Enabled(ClassicGame::Option::AlternateControls) || !*game) return;
+                const auto* actor = static_cast<uint8_t*>(*game) + 14864;
+                if (Read<uint8_t>(actor, 4) != 1 || Read<uint8_t>(actor, 5) > 2) return;
+                pushContact = true;
+                contactYaw = Read<int16_t>(actor, 118);
+            });
         auto reload = hook::pattern("A1 ? ? ? ? 33 C9 25 FF 00 00 00 53 33 DB 8A 0C 85 ? ? ? ? 8B C1 C1 E0 03 8A 98 ? ? ? ? 8B 90");
         if (reload.size() == 1)
         {

@@ -204,3 +204,12 @@ Left/Right: select
 
 [Left/Right: select]
 Left/Right: select
+
+[Auto push]
+Auto push
+
+[Push objects without releasing the run button.]
+Push objects without releasing the run button.
+
+[Applies to alternate movement controls.]
+Applies to alternate movement controls.

@@ -201,3 +201,12 @@ Intro: aceptar   Esc: volver
 
 [Left/Right: select]
 Izq./Der.: elegir
+
+[Auto push]
+Empuje auto
+
+[Push objects without releasing the run button.]
+Empuja objetos sin soltar el botón de correr.
+
+[Applies to alternate movement controls.]
+Se aplica a los controles de movimiento alternativos.

@@ -8,12 +8,12 @@ import common;
 
 export namespace ClassicGame
 {
-    enum class Option { PanAndScan, AlternateControls, SkipIntro, SkipDoor, FastLoad, AutoLoad };
-    constexpr std::array<const char*, 6> optionNames = { "PanAndScan", "AlternateControls", "SkipIntro", "SkipDoor", "FastLoad", "AutoLoad" };
+    enum class Option { PanAndScan, AlternateControls, SkipIntro, SkipDoor, FastLoad, AutoLoad, AutoPush };
+    constexpr std::array<const char*, 7> optionNames = { "PanAndScan", "AlternateControls", "SkipIntro", "SkipDoor", "FastLoad", "AutoLoad", "AutoPush" };
 
     struct Settings
     {
-        std::array<std::atomic<bool>, 6> enabled;
+        std::array<std::atomic<bool>, 7> enabled;
         std::atomic<int> keyboardRunMode = 0, loadSlot = 0;
         bool hdControls = true;
         float maxAspectRatio = 16.0f / 9.0f;
@@ -24,7 +24,7 @@ export namespace ClassicGame
             hdControls = reader.ReadInteger("MAIN", "HDControls", 1) != 0;
             maxAspectRatio = Presentation::ParseAspectRatio(reader.ReadString("MAIN", "MaxAspectRatio", "16:9"));
             for (size_t i = 0; i < optionNames.size(); ++i)
-                enabled[i] = reader.ReadInteger("MAIN", optionNames[i], i == 2 || i == 3) != 0;
+                enabled[i] = reader.ReadInteger("MAIN", optionNames[i], i == 2 || i == 3 || i == 6) != 0;
             keyboardRunMode = std::clamp(reader.ReadInteger("MAIN", "KeyboardRunMode", 0), 0, 3);
             loadSlot = std::clamp(reader.ReadInteger("MAIN", "LoadSlot", 0), 0, 65535);
         }

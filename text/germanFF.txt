@@ -201,3 +201,12 @@ Eingabe: bestätigen   Esc: zurück
 
 [Left/Right: select]
 Links/Rechts: wählen
+
+[Auto push]
+Auto-Schieben
+
+[Push objects without releasing the run button.]
+Objekte schieben, ohne die Lauftaste loszulassen.
+
+[Applies to alternate movement controls.]
+Gilt für die alternative Bewegungssteuerung.

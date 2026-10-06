@@ -4,7 +4,7 @@
 namespace NativeMenu
 {
     enum Action { Resume, Widescreen, Controls, RunMode, SkipIntro, SkipDoors,
-        FastLoad, AutoLoad, LoadSlot, Load, Quit, Wobble, DisplayPage, ControlsPage, GamePage, Back };
+        FastLoad, AutoLoad, LoadSlot, Load, Quit, Wobble, DisplayPage, ControlsPage, GamePage, Back, AutoPush };
     enum class Page { Pause, Display, Controls, Game };
     struct State
     {
@@ -18,7 +18,9 @@ namespace NativeMenu
             {
             case Page::Display: return game == 3 ? std::vector<Action>{ Widescreen, Wobble, Back } : std::vector<Action>{ Widescreen, Back };
             case Page::Controls: return { Controls, RunMode, Back };
-            case Page::Game: return { SkipIntro, SkipDoors, FastLoad, AutoLoad, LoadSlot, Back };
+            case Page::Game: return game == 1
+                ? std::vector<Action>{ SkipIntro, SkipDoors, FastLoad, AutoLoad, LoadSlot, Back }
+                : std::vector<Action>{ SkipIntro, SkipDoors, FastLoad, AutoLoad, LoadSlot, AutoPush, Back };
             default: return { Resume, Load, DisplayPage, ControlsPage, GamePage, Quit };
             }
         }
@@ -43,7 +45,7 @@ namespace NativeMenu
     inline const char* Label(Action action)
     {
         constexpr const char* names[] = { "Continue", "Widescreen", "Control type", "Shift key", "Skip intro", "Skip doors",
-            "Fast load", "Auto load", "Load slot", "Load game", "Exit game", "Wobble fix", "Display", "Controls", "Game options", "Return" };
+            "Fast load", "Auto load", "Load slot", "Load game", "Exit game", "Wobble fix", "Display", "Controls", "Game options", "Return", "Auto push" };
         return names[action];
     }
     inline std::array<const char*, 2> Help(Action action, bool canLoad)
@@ -59,6 +61,7 @@ namespace NativeMenu
         case SkipIntro: return { "Go straight to the title menu on startup.", "Story movies are still played." };
         case SkipDoors: return { "Skip door animations between rooms.", "The next room still loads normally." };
         case FastLoad: return { "Skip the recap text after loading a save.", "Story dialogue is unaffected." };
+        case AutoPush: return { "Push objects without releasing the run button.", "Applies to alternate movement controls." };
         case AutoLoad: return { "Load the selected save when the game starts.", "If unavailable, show the save selection." };
         case LoadSlot: return { "Choose the save used by Load game and Auto load.", "Latest selects the most recently saved file." };
         case Quit: return { "Exit the game.", "Unsaved progress will be lost." };

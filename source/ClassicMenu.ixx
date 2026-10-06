@@ -67,6 +67,7 @@ export namespace ClassicMenu
         case NativeMenu::LoadSlot: return 8;
         case NativeMenu::Load: return 9;
         case NativeMenu::Quit: return 10;
+        case NativeMenu::AutoPush: return 11;
         default: return -1;
         }
     }
@@ -81,7 +82,8 @@ export namespace ClassicMenu
     {
         const int selection = SelectedRow();
         auto& settings = ClassicGame::GetSettings();
-        if (selection == 3) settings.keyboardRunMode = (settings.keyboardRunMode.load() + delta + 4) % 4;
+        if (selection == 11) ClassicGame::Toggle(ClassicGame::Option::AutoPush);
+        else if (selection == 3) settings.keyboardRunMode = (settings.keyboardRunMode.load() + delta + 4) % 4;
         else if (selection == 8) settings.loadSlot = (std::clamp(settings.loadSlot.load(), 0, maxSlot) + delta + maxSlot + 1) % (maxSlot + 1);
         else if (selection >= 1 && selection <= 7)
             ClassicGame::Toggle(ClassicGame::Option(selection - 1 - int(selection > 3)));
@@ -274,6 +276,7 @@ export namespace ClassicMenu
             case NativeMenu::SkipDoors: option = 3; break;
             case NativeMenu::FastLoad: option = 4; break;
             case NativeMenu::AutoLoad: option = 5; break;
+            case NativeMenu::AutoPush: option = 6; break;
             }
             return option >= 0 ? Localization::Text(ClassicGame::Enabled(ClassicGame::Option(option)) ? "On" : "Off") : L"";
         };

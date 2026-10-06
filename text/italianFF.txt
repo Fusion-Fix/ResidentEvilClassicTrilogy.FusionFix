@@ -201,3 +201,12 @@ Invio: conferma   Esc: indietro
 
 [Left/Right: select]
 Sinistra/Destra: scegli
+
+[Auto push]
+Spinta auto
+
+[Push objects without releasing the run button.]
+Spingi gli oggetti senza rilasciare il tasto corsa.
+
+[Applies to alternate movement controls.]
+Si applica ai comandi di movimento alternativi.

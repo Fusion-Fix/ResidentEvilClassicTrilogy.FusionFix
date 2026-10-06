@@ -13,12 +13,12 @@ export namespace Game
 {
     using WobbleFix::Read;
 
-    enum class Option { WobbleFix, PanAndScan, AlternateControls, SkipIntro, SkipDoor, FastLoad, AutoLoad };
-    constexpr std::array<const char*, 7> optionNames = { "WobbleFix", "PanAndScan", "AlternateControls", "SkipIntro", "SkipDoor", "FastLoad", "AutoLoad" };
+    enum class Option { WobbleFix, PanAndScan, AlternateControls, SkipIntro, SkipDoor, FastLoad, AutoLoad, AutoPush };
+    constexpr std::array<const char*, 8> optionNames = { "WobbleFix", "PanAndScan", "AlternateControls", "SkipIntro", "SkipDoor", "FastLoad", "AutoLoad", "AutoPush" };
 
     struct Settings
     {
-        std::array<std::atomic<bool>, 7> enabled;
+        std::array<std::atomic<bool>, 8> enabled;
         std::atomic<int> keyboardRunMode = 0, loadSlot = 0;
         bool hdControls = true;
         float maxAspectRatio = 16.0f / 9.0f;
@@ -35,6 +35,7 @@ export namespace Game
             enabled[4] = reader.ReadInteger("MAIN", "SkipDoor", 1) != 0;
             enabled[5] = reader.ReadInteger("MAIN", "FastLoad", 0) != 0;
             enabled[6] = reader.ReadInteger("MAIN", "AutoLoad", 0) != 0;
+            enabled[7] = reader.ReadInteger("MAIN", "AutoPush", 1) != 0;
             keyboardRunMode = std::clamp(reader.ReadInteger("MAIN", "KeyboardRunMode", 0), 0, 3);
             loadSlot = std::clamp(reader.ReadInteger("MAIN", "LoadSlot", 0), 0, 30);
         }

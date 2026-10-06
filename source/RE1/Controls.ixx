@@ -14,7 +14,7 @@ namespace RE1Controls
 {
     using ClassicMemory::Read;
     using ClassicMemory::Write;
-    SafetyHookInline shMovement;
+    SafetyHookInline shMovement, shPush;
     uint16_t* held = nullptr;
     uint16_t* pressed = nullptr;
     uint16_t* previousHeld = nullptr;
@@ -135,6 +135,20 @@ namespace RE1Controls
         *previousHeld = originalPrevious;
     }
 
+    uintptr_t __cdecl Push()
+    {
+        const auto original = *held;
+        // Object collision runs after Movement has restored the physical input.
+        // Feed it the same logical direction used to move the player this frame.
+        if (remapped && ClassicGame::Enabled(ClassicGame::Option::AlternateControls)
+            && !ClassicInput::gameInputSuppressed && !(*control & 0x10000000)
+            && (*taskFlags & 0x100) && !(player[3] & 0x20) && player[132] == 1 && player[133] < 2)
+            *held = (original & ~15u) | (mappedHeld & 15u);
+        const auto result = shPush.unsafe_ccall<uintptr_t>();
+        *held = original;
+        return result;
+    }
+
     void Init()
     {
         auto movement = hook::pattern("66 83 3D ? ? ? ? 00 7D ? 66 81 3D ? ? ? ? FF 7F 75 ? 66 81 05 ? ? ? ? 00 08 C7 05");
@@ -173,6 +187,8 @@ namespace RE1Controls
             });
         }
         shMovement = safetyhook::create_inline(movement.get_first(), Movement);
+        auto push = hook::pattern("83 EC 14 A1 ? ? ? ? C7 44 24 04 00 00 00 00 C7 44 24 00 00 00 00 00 80 78 02 00 53 56 57 55");
+        if (push.size() == 1) shPush = safetyhook::create_inline(push.get_first(), Push);
     }
 }
 

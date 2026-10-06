@@ -321,6 +321,20 @@ private:
     static inline SafetyHookInline shGetSystemTimeAsFileTime = {};
     static inline void WINAPI GetSystemTimeAsFileTimeHook(LPFILETIME lpSystemTimeAsFileTime)
     {
+        // Initialization (and the CRT's mutex implementation) can query time.
+        // A nested call must not lock the callback mutex or retire this hook.
+        static thread_local bool dispatching = false;
+        if (dispatching)
+        {
+            shGetSystemTimeAsFileTime.unsafe_stdcall<void>(lpSystemTimeAsFileTime);
+            return;
+        }
+        struct DispatchGuard
+        {
+            bool& active;
+            explicit DispatchGuard(bool& value) : active(value) { active = true; }
+            ~DispatchGuard() { active = false; }
+        } guard(dispatching);
         auto& threadParams = GetCallbackParamsList();
 
         static std::mutex threadParamsMutex;
@@ -338,7 +352,7 @@ private:
             }
         }
 
-        shGetSystemTimeAsFileTime.stdcall<ReturnType<decltype(GetSystemTimeAsFileTime)>>(lpSystemTimeAsFileTime);
+        shGetSystemTimeAsFileTime.unsafe_stdcall<void>(lpSystemTimeAsFileTime);
 
         if (std::all_of(threadParams.begin(), threadParams.end(), [](const auto& params) { return params.executed; }))
             shGetSystemTimeAsFileTime = {};

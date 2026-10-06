@@ -17,7 +17,9 @@ namespace AlternateControls
     using WobbleFix::Read;
     using WobbleFix::Write;
 
-    SafetyHookInline shMovement;
+    SafetyHookInline shMovement, shDirectionCheck;
+    uint32_t mappedDirection = 0;
+    bool directionRemapped = false;
     Game::State game;
     Presentation::Heading heading;
     bool moving = false;
@@ -40,6 +42,7 @@ namespace AlternateControls
 
     static uintptr_t __cdecl MovementHook(void* player)
     {
+        if (player == game.player) directionRemapped = false;
         keyboardRunMode = Game::GetSettings().keyboardRunMode.load(std::memory_order_relaxed);
         const auto held = *game.held;
         const auto pressed = *game.pressed;
@@ -127,6 +130,8 @@ namespace AlternateControls
             stickRunning = false;
             *game.held = held & ~15u;
             *game.pressed = pressed & ~15u;
+            mappedDirection = 0;
+            directionRemapped = true;
             const auto result = shMovement.unsafe_ccall<uintptr_t>(player);
             *game.held = held;
             *game.pressed = pressed;
@@ -150,10 +155,28 @@ namespace AlternateControls
             Write(player, 4, uint32_t(1));
         *game.held = (held & ~0x20Fu) | 1u | (run ? 0x200u : 0u);
         *game.pressed = (pressed & ~0x20Fu) | (moving ? 0u : 1u);
+        mappedDirection = 1;
+        directionRemapped = true;
         moving = true;
         const auto result = shMovement.unsafe_ccall<uintptr_t>(player);
         *game.held = held;
         *game.pressed = pressed;
+        return result;
+    }
+
+    static int __cdecl DirectionCheck(void* task)
+    {
+        const auto* instruction = Read<uint8_t*>(task, 28);
+        const auto mask = Read<uint16_t>(instruction, 2);
+        const auto original = *game.held;
+        // Like RE2, scripted object interactions check held directions after
+        // the movement dispatcher has restored the physical input packet.
+        if (directionRemapped && mask && !(mask & ~15u)
+            && Game::Enabled(Game::Option::AlternateControls) && game.Controllable()
+            && !Input::suppressUntilRelease)
+            *game.held = (original & ~15u) | mappedDirection;
+        const auto result = shDirectionCheck.unsafe_ccall<int>(task);
+        *game.held = original;
         return result;
     }
 
@@ -172,6 +195,13 @@ namespace AlternateControls
         CIniReader reader("");
         keyboardRunMode = std::clamp(reader.ReadInteger("MAIN", "KeyboardRunMode", 0), 0, 3);
         shMovement = safetyhook::create_inline(game.movement, MovementHook);
+        auto directionCheck = hook::pattern("56 8B 74 24 08 33 C0 33 D2 8B 4E 1C 8A 41 01 66 8B 51 02 83 C1 04 89 4E 1C 8B 0D ? ? ? ? 85 CA 5E 75 03 83 F0 01 C3");
+        for (size_t i = 0; i < directionCheck.size(); ++i)
+        {
+            auto* code = directionCheck.get(i).get<uint8_t>();
+            if (Read<uint32_t*>(code, 27) == game.held)
+                shDirectionCheck = safetyhook::create_inline(code, DirectionCheck);
+        }
     }
 }
 

@@ -210,3 +210,40 @@ Enter：けってい　Esc：もどる
 
 [Applies to alternate movement controls.]
 そうさタイプがべつのときにゆうこうです。
+
+
+[Bindings]
+キーせってい
+
+[Remaster]
+リマスター
+
+[Aspect limit]
+がめんひりつ
+
+[Portable settings]
+せっていほぞん
+
+[System]
+システム
+
+[Remaster: WASD and HD Remaster buttons.]
+リマスター: WASD と HD のそうさ
+
+[Original: use the native custom bindings.]
+オリジナル: ゲームのキーせってい
+
+[Set the widest aspect used by widescreen.]
+ワイドがめんのさいだいひりつ
+
+[16:9 is the default; narrower screens adapt.]
+きほんは 16:9 せまいがめんもたいおう
+
+[Save native settings beside the game.]
+ゲームのそばにせっていをほぞん
+
+[Restart the game to apply this change.]
+ゲームのさいきどうでてきよう
+
+[Choose where native settings are stored.]
+せっていのほぞんばしょをえらぶ

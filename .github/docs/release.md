@@ -41,7 +41,7 @@ The scene is enlarged and cropped vertically from its original 4:3 image. Backgr
   <img src="https://raw.githubusercontent.com/Fusion-Fix/ResidentEvilClassicTrilogy.FusionFix/refs/heads/main/.github/docs/video/re3-pan-and-scan.webp" width="800" alt="Resident Evil 3: widescreen gameplay with vertical pan-and-scan framing">
 </p>
 
-**16:10 works automatically.** The INI-only `MaxAspectRatio` defaults to `16:9`; wider displays have side borders unless you raise it, for example to `21:9`.
+**16:10 works automatically.** The `MaxAspectRatio` limit in Display defaults to `16:9`; wider displays have side borders unless you raise it, for example to `21:9`.
 
 ### Alternate controls, familiar cameras
 
@@ -55,7 +55,7 @@ The D-pad retains tank controls. Aiming, interactions, and scripted movement ret
 
 ### Remaster-style button layout
 
-The default keyboard and XInput layout follows **Resident Evil HD Remaster Type A**, with the same buttons in tank and Alternate movement modes. Set `HDControls = 0` in the plugin INI to restore native bindings. Legacy controllers retain their native button mappings.
+The default keyboard and XInput layout follows **Resident Evil HD Remaster Type A**, with the same buttons in tank and Alternate movement modes. Choose **Controls → Bindings → Original** (or set `HDControls = 0` in the plugin INI) to restore native bindings. Legacy controllers retain their native button mappings.
 
 | Action | Keyboard / mouse | Controller |
 |:--|:--|:--|
@@ -82,7 +82,7 @@ The **RE3-only wobble fix** preserves subpixel model coordinates to reduce visib
 
 ### Settings without leaving the game
 
-Press **Esc** or controller **Start** to pause. Each game has its own menu styling, with **Display**, **Controls**, and **Game options** pages. The selected item explains its effect, and the button hints follow keyboard or controller input. Changes are saved automatically to the INI, and all menu text follows the game's language. **Esc / B** returns to the previous page; **Start** resumes the game.
+Press **Esc** or controller **Start** to pause. Each game has its own menu styling, with **Display**, **Controls**, and **Game options** pages, plus **System** in RE1/RE2. Every plugin INI option is available in these menus. **Display → Aspect limit** defaults to **16:9**; **Controls → Bindings** switches between Remaster and native bindings independently of movement. Portable settings take effect after restarting. The selected item explains its effect, and the button hints follow keyboard or controller input. Changes are saved automatically to the INI, and all menu text follows the game's language. **Esc / B** returns to the previous page; **Start** resumes the game.
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/Fusion-Fix/ResidentEvilClassicTrilogy.FusionFix/refs/heads/main/.github/docs/video/fusion-fix-menu.webp" width="960" alt="The Fusion Fix menu: presentation, controls, and loading options">
@@ -134,8 +134,8 @@ Edit the matching INI in `plugins/`, or use the in-game menu. The defaults keep 
 | Option in `[MAIN]` | Default | What it does |
 |:--|:--:|:--|
 | `PanAndScan` | `0` | Widescreen framing with automatic and right-stick vertical panning |
-| `MaxAspectRatio` | `16:9` | INI-only widescreen limit; accepts a ratio or decimal |
-| `HDControls` | `1` | Remaster keyboard / XInput bindings, quick turn and manual reload; restart after changing |
+| `MaxAspectRatio` | `16:9` | Display → Aspect limit; accepts a ratio or decimal |
+| `HDControls` | `1` | Remaster keyboard / XInput bindings, quick turn and manual reload; Controls → Bindings |
 | `AlternateControls` | `0` | Screen-relative keyboard and left-stick movement |
 | `AutoPush` | `1` | RE2/RE3 only: alternate controls automatically switch from running to native-speed pushing; `0` requires walking. RE1 already allows pushing while holding run |
 | `KeyboardRunMode` | `0` | Choose Shift hold/toggle behavior; see below |
@@ -144,7 +144,7 @@ Edit the matching INI in `plugins/`, or use the in-game menu. The defaults keep 
 | `FastLoad` | `0` | Skip recap captions after loading |
 | `AutoLoad` | `0` | Load the selected save on startup |
 | `LoadSlot` | `0` | Select Latest or a native save entry; see below |
-| `PortableMode` | `1` | RE1/RE2 only: keep native settings in an INI; restart after changing |
+| `PortableMode` | `1` | RE1/RE2 only: System → Portable settings; keep native settings in an INI; restart after changing |
 | `WobbleFix` | `1` | RE3 only: stabilize model geometry |
 
 For alternate keyboard controls, `KeyboardRunMode` selects:

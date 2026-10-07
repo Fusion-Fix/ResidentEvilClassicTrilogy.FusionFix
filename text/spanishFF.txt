@@ -210,3 +210,40 @@ Empuja objetos sin soltar el botón de correr.
 
 [Applies to alternate movement controls.]
 Se aplica a los controles de movimiento alternativos.
+
+
+[Bindings]
+Asignación
+
+[Remaster]
+Remaster
+
+[Aspect limit]
+Relación máxima
+
+[Portable settings]
+Opciones portables
+
+[System]
+Sistema
+
+[Remaster: WASD and HD Remaster buttons.]
+Remaster: WASD y botones HD Remaster.
+
+[Original: use the native custom bindings.]
+Original: asignaciones nativas propias.
+
+[Set the widest aspect used by widescreen.]
+Elige la relación máxima de pantalla.
+
+[16:9 is the default; narrower screens adapt.]
+16:9 por defecto; pantallas estrechas adaptan.
+
+[Save native settings beside the game.]
+Guarda las opciones junto al juego.
+
+[Restart the game to apply this change.]
+Reinicia el juego para aplicar el cambio.
+
+[Choose where native settings are stored.]
+Elige dónde guardar las opciones nativas.

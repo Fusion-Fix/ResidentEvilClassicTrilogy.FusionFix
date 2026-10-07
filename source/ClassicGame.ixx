@@ -15,12 +15,14 @@ export namespace ClassicGame
     {
         std::array<std::atomic<bool>, 7> enabled;
         std::atomic<int> keyboardRunMode = 0, loadSlot = 0;
-        bool hdControls = true;
-        float maxAspectRatio = 16.0f / 9.0f;
+        std::atomic<bool> hdControls = true;
+        bool portableMode = true;
+        std::atomic<float> maxAspectRatio = 16.0f / 9.0f;
 
         Settings()
         {
             CIniReader reader("");
+            portableMode = reader.ReadInteger("MAIN", "PortableMode", 1) != 0;
             hdControls = reader.ReadInteger("MAIN", "HDControls", 1) != 0;
             maxAspectRatio = Presentation::ParseAspectRatio(reader.ReadString("MAIN", "MaxAspectRatio", "16:9"));
             for (size_t i = 0; i < optionNames.size(); ++i)
@@ -55,6 +57,9 @@ export namespace ClassicGame
         CIniReader reader("");
         for (size_t i = 0; i < optionNames.size(); ++i)
             reader.WriteInteger("MAIN", optionNames[i], int(GetSettings().enabled[i].load()), true);
+        reader.WriteInteger("MAIN", "HDControls", int(GetSettings().hdControls.load()), true);
+        reader.WriteString("MAIN", "MaxAspectRatio", std::to_string(GetSettings().maxAspectRatio.load()), true);
+        reader.WriteInteger("MAIN", "PortableMode", int(GetSettings().portableMode), true);
         reader.WriteInteger("MAIN", "KeyboardRunMode", GetSettings().keyboardRunMode.load(), true);
         reader.WriteInteger("MAIN", "LoadSlot", GetSettings().loadSlot.load(), true);
     }

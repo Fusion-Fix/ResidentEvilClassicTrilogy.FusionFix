@@ -56,7 +56,7 @@ export namespace Input
 namespace ControllerInput
 {
     using WobbleFix::Read;
-    SafetyHookInline shPoll;
+    SafetyHookInline shPoll, shKeyboard;
     SafetyHookMid shPacket;
     uint32_t* rawHeld = nullptr;
     uint16_t* profile = nullptr;
@@ -124,6 +124,16 @@ namespace ControllerInput
         }
     }
 
+    static int __fastcall KeyboardPollHook(void* manager, void*)
+    {
+        const auto result = shKeyboard.unsafe_thiscall<int>(manager);
+        // Remove only native keyboard bindings before the engine combines
+        // them with DirectInput. HDState reads physical keys independently.
+        if (Game::GetSettings().hdControls && Input::game.flags)
+            std::memset(static_cast<uint8_t*>(manager) + 658824, 0, 256);
+        return result;
+    }
+
     static int __fastcall PollHook(void* manager, void*)
     {
         const auto result = shPoll.unsafe_thiscall<int>(manager);
@@ -165,23 +175,34 @@ namespace ControllerInput
 
     static void Init()
     {
+        auto keyboard = hook::pattern("56 8B F1 57 8B 86 80 0D 0A 00 8D BE 88 0D 0A 00 57 68 00 01 00 00 8B 08 50 FF 51 24 85 C0");
         auto packet = hook::pattern("8B 15 ? ? ? ? 33 F6 89 15 ? ? ? ? 89 35 ? ? ? ? B9 01 00 00 00 33 DB 66 8B 1F 85 D8");
         auto raw = hook::pattern("8A 0D ? ? ? ? F7 D0 25 FF FF 00 00 80 F9 07 A3");
         auto mapping = hook::pattern("A0 ? ? ? ? 8B F8 A1 ? ? ? ? C1 E7 05 81 C7 ? ? ? ? 8B E8");
-        if (packet.size() == 1 && raw.size() == 1 && mapping.size() == 1 && Game::Resolve(Input::game))
+        if (packet.size() == 1 && raw.size() == 1 && mapping.size() == 1 && keyboard.size() == 1 && Game::Resolve(Input::game))
         {
             rawHeld = *raw.get_first<uint32_t*>(17);
             profile = *mapping.get_first<uint16_t*>(17);
+            shKeyboard = safetyhook::create_inline(keyboard.get_first(), KeyboardPollHook);
             shPacket = safetyhook::create_mid(packet.get_first(), [](SafetyHookContext& ctx)
             {
                 if (*Input::game.flags & 0x10000000) return; // recorded demo input
                 const auto pad = Input::GetPad();
                 auto input = Input::HDState();
-                if (Game::GetSettings().hdControls && (!pad.connected || pad.xinput))
+                if (Game::GetSettings().hdControls)
                 {
                     const bool movie = (*Input::game.flags & 0x10000) != 0;
+                    uint32_t legacy = 0;
+                    if (pad.connected && !pad.xinput)
+                    {
+                        // Translate the controller's selected native profile
+                        // into the default packet used by remaster bindings.
+                        const auto* nativeProfile = reinterpret_cast<const uint16_t*>(ctx.edi);
+                        for (int i = 0; i < 16; ++i)
+                            if (ctx.eax & nativeProfile[i]) legacy |= profile[i];
+                    }
                     ctx.eax = movie && !movieInputReady ? 0
-                        : HDControls::Native(input, 3, Input::InNativeMenu(), movie);
+                        : HDControls::Native(input, 3, Input::InNativeMenu(), movie) | legacy;
                     ctx.edi = uintptr_t(profile);
                     // Native analog steering must not remove freshly mapped
                     // left/right packet bits later in this function.

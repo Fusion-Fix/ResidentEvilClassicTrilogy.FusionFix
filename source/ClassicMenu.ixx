@@ -68,6 +68,9 @@ export namespace ClassicMenu
         case NativeMenu::Load: return 9;
         case NativeMenu::Quit: return 10;
         case NativeMenu::AutoPush: return 11;
+        case NativeMenu::Bindings: return 12;
+        case NativeMenu::AspectLimit: return 13;
+        case NativeMenu::Portable: return 14;
         default: return -1;
         }
     }
@@ -82,7 +85,19 @@ export namespace ClassicMenu
     {
         const int selection = SelectedRow();
         auto& settings = ClassicGame::GetSettings();
-        if (selection == 11) ClassicGame::Toggle(ClassicGame::Option::AutoPush);
+        if (selection == 12)
+        {
+            auto& bindings = ClassicGame::GetSettings().hdControls;
+            bindings = !bindings.load();
+        }
+        else if (selection == 13)
+        {
+            auto& aspect = ClassicGame::GetSettings().maxAspectRatio;
+            aspect = NativeMenu::ChangeAspect(aspect.load(), delta);
+            ClassicGame::onSettingsChanged().executeAll();
+        }
+        else if (selection == 14) ClassicGame::GetSettings().portableMode = !ClassicGame::GetSettings().portableMode;
+        else if (selection == 11) ClassicGame::Toggle(ClassicGame::Option::AutoPush);
         else if (selection == 3) settings.keyboardRunMode = (settings.keyboardRunMode.load() + delta + 4) % 4;
         else if (selection == 8) settings.loadSlot = (std::clamp(settings.loadSlot.load(), 0, maxSlot) + delta + maxSlot + 1) % (maxSlot + 1);
         else if (selection >= 1 && selection <= 7)
@@ -256,7 +271,13 @@ export namespace ClassicMenu
         };
         const auto value = [&](NativeMenu::Action action) -> std::wstring
         {
-            if (action == NativeMenu::Controls)
+            if (action == NativeMenu::Bindings)
+            return Localization::Text(ClassicGame::GetSettings().hdControls ? "Remaster" : "Original");
+        if (action == NativeMenu::AspectLimit)
+            return NativeMenu::AspectName(ClassicGame::GetSettings().maxAspectRatio.load());
+        if (action == NativeMenu::Portable)
+            return Localization::Text(ClassicGame::GetSettings().portableMode ? "On" : "Off");
+        if (action == NativeMenu::Controls)
                 return Localization::Text(ClassicGame::Enabled(ClassicGame::Option::AlternateControls) ? "Alternate" : "Original");
             if (action == NativeMenu::RunMode)
             {

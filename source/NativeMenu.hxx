@@ -4,8 +4,8 @@
 namespace NativeMenu
 {
     enum Action { Resume, Widescreen, Controls, RunMode, SkipIntro, SkipDoors,
-        FastLoad, AutoLoad, LoadSlot, Load, Quit, Wobble, DisplayPage, ControlsPage, GamePage, Back, AutoPush };
-    enum class Page { Pause, Display, Controls, Game };
+        FastLoad, AutoLoad, LoadSlot, Load, Quit, Wobble, DisplayPage, ControlsPage, GamePage, Back, AutoPush, Bindings, AspectLimit, Portable, SystemPage };
+    enum class Page { Pause, Display, Controls, Game, System };
     struct State
     {
         Page page = Page::Pause;
@@ -16,12 +16,14 @@ namespace NativeMenu
         {
             switch (page)
             {
-            case Page::Display: return game == 3 ? std::vector<Action>{ Widescreen, Wobble, Back } : std::vector<Action>{ Widescreen, Back };
-            case Page::Controls: return { Controls, RunMode, Back };
+            case Page::Display: return game == 3 ? std::vector<Action>{ Widescreen, AspectLimit, Wobble, Back } : std::vector<Action>{ Widescreen, AspectLimit, Back };
+            case Page::Controls: return { Controls, Bindings, RunMode, Back };
             case Page::Game: return game == 1
                 ? std::vector<Action>{ SkipIntro, SkipDoors, FastLoad, AutoLoad, LoadSlot, Back }
                 : std::vector<Action>{ SkipIntro, SkipDoors, FastLoad, AutoLoad, LoadSlot, AutoPush, Back };
-            default: return { Resume, Load, DisplayPage, ControlsPage, GamePage, Quit };
+            case Page::System: return { Portable, Back };
+            default: return game == 3 ? std::vector<Action>{ Resume, Load, DisplayPage, ControlsPage, GamePage, Quit }
+                : std::vector<Action>{ Resume, Load, DisplayPage, ControlsPage, GamePage, SystemPage, Quit };
             }
         }
         Action Selected(int game) const { const auto rows = Rows(game); return rows[std::clamp(cursor, 0, int(rows.size()) - 1)]; }
@@ -29,23 +31,36 @@ namespace NativeMenu
         bool Return()
         {
             if (page == Page::Pause) return false;
-            cursor = page == Page::Display ? 2 : page == Page::Controls ? 3 : 4;
+            cursor = page == Page::Display ? 2 : page == Page::Controls ? 3 : page == Page::System ? 5 : 4;
             page = Page::Pause;
             return true;
         }
         bool Enter(Action action)
         {
             if (action == Back) return Return();
-            if (action != DisplayPage && action != ControlsPage && action != GamePage) return false;
-            page = action == DisplayPage ? Page::Display : action == ControlsPage ? Page::Controls : Page::Game;
+            if (action != DisplayPage && action != ControlsPage && action != GamePage && action != SystemPage) return false;
+            page = action == DisplayPage ? Page::Display : action == ControlsPage ? Page::Controls : action == SystemPage ? Page::System : Page::Game;
             cursor = 0;
             return true;
         }
     };
+    constexpr float aspects[] = { 4.0f / 3.0f, 16.0f / 10.0f, 16.0f / 9.0f, 21.0f / 9.0f, 32.0f / 9.0f };
+    constexpr const wchar_t* aspectNames[] = { L"4:3", L"16:10", L"16:9", L"21:9", L"32:9" };
+    inline float ChangeAspect(float current, int delta)
+    {
+        if (delta > 0) { for (float aspect : aspects) if (aspect > current + 0.001f) return aspect; return aspects[0]; }
+        for (int i = 4; i >= 0; --i) if (aspects[i] < current - 0.001f) return aspects[i];
+        return aspects[4];
+    }
+    inline std::wstring AspectName(float current)
+    {
+        for (int i = 0; i < 5; ++i) if (std::abs(current - aspects[i]) < 0.001f) return aspectNames[i];
+        auto value = std::to_wstring(current); value.resize(value.find(L'.') + 3); return value + L":1";
+    }
     inline const char* Label(Action action)
     {
         constexpr const char* names[] = { "Continue", "Widescreen", "Control type", "Shift key", "Skip intro", "Skip doors",
-            "Fast load", "Auto load", "Load slot", "Load game", "Exit game", "Wobble fix", "Display", "Controls", "Game options", "Return", "Auto push" };
+            "Fast load", "Auto load", "Load slot", "Load game", "Exit game", "Wobble fix", "Display", "Controls", "Game options", "Return", "Auto push", "Bindings", "Aspect limit", "Portable settings", "System" };
         return names[action];
     }
     inline std::array<const char*, 2> Help(Action action, bool canLoad)
@@ -57,6 +72,10 @@ namespace NativeMenu
             : std::array<const char*, 2>{ "Loading is available from the title screen.", "Return there to load a saved game." };
         case Widescreen: return { "Fill the screen with a moving camera view.", "Menus retain their original proportions." };
         case Controls: return { "Original: turn and move relative to the player.", "Alternate: move in the direction you press." };
+        case Bindings: return { "Remaster: WASD and HD Remaster buttons.", "Original: use the native custom bindings." };
+        case AspectLimit: return { "Set the widest aspect used by widescreen.", "16:9 is the default; narrower screens adapt." };
+        case Portable: return { "Save native settings beside the game.", "Restart the game to apply this change." };
+        case SystemPage: return { "Choose where native settings are stored.", "" };
         case RunMode: return { "Choose how Shift switches walking and running.", "Applies to alternate keyboard controls." };
         case SkipIntro: return { "Go straight to the title menu on startup.", "Story movies are still played." };
         case SkipDoors: return { "Skip door animations between rooms.", "The next room still loads normally." };
@@ -80,7 +99,7 @@ namespace NativeMenu
         constexpr uint32_t selected = 0xFF00FF00, white = 0xFFFFFFFF;
         // The engine draws a translucent fullscreen layer before these glyphs.
         const char* heading = confirmation ? "Exit game" : state.page == Page::Pause ? "PAUSE"
-            : state.page == Page::Display ? "Display" : state.page == Page::Controls ? "Controls" : "Game options";
+            : state.page == Page::Display ? "Display" : state.page == Page::Controls ? "Controls" : state.page == Page::System ? "System" : "Game options";
         text(26, 18, translate(heading), white, 264.0f, false);
         if (confirmation)
         {

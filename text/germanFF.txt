@@ -210,3 +210,40 @@ Objekte schieben, ohne die Lauftaste loszulassen.
 
 [Applies to alternate movement controls.]
 Gilt für die alternative Bewegungssteuerung.
+
+
+[Bindings]
+Belegung
+
+[Remaster]
+Remaster
+
+[Aspect limit]
+Max. Format
+
+[Portable settings]
+Portable Optionen
+
+[System]
+System
+
+[Remaster: WASD and HD Remaster buttons.]
+Remaster: WASD und HD-Remaster-Tasten.
+
+[Original: use the native custom bindings.]
+Original: eigene native Tastenbelegung.
+
+[Set the widest aspect used by widescreen.]
+Maximales Breitbildformat einstellen.
+
+[16:9 is the default; narrower screens adapt.]
+Standard: 16:9; schmalere Bildschirme passen.
+
+[Save native settings beside the game.]
+Native Optionen neben dem Spiel speichern.
+
+[Restart the game to apply this change.]
+Zum Übernehmen das Spiel neu starten.
+
+[Choose where native settings are stored.]
+Speicherort der nativen Optionen wählen.

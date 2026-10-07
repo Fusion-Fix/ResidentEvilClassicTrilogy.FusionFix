@@ -20,8 +20,8 @@ export namespace Game
     {
         std::array<std::atomic<bool>, 8> enabled;
         std::atomic<int> keyboardRunMode = 0, loadSlot = 0;
-        bool hdControls = true;
-        float maxAspectRatio = 16.0f / 9.0f;
+        std::atomic<bool> hdControls = true;
+        std::atomic<float> maxAspectRatio = 16.0f / 9.0f;
 
         Settings()
         {
@@ -59,6 +59,8 @@ export namespace Game
         CIniReader reader("");
         for (size_t i = 0; i < optionNames.size(); ++i)
             reader.WriteInteger("MAIN", optionNames[i], int(GetSettings().enabled[i].load()), true);
+        reader.WriteInteger("MAIN", "HDControls", int(GetSettings().hdControls.load()), true);
+        reader.WriteString("MAIN", "MaxAspectRatio", std::to_string(GetSettings().maxAspectRatio.load()), true);
         reader.WriteInteger("MAIN", "KeyboardRunMode", GetSettings().keyboardRunMode.load(), true);
         reader.WriteInteger("MAIN", "LoadSlot", GetSettings().loadSlot.load(), true);
     }

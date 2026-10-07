@@ -230,6 +230,8 @@ namespace GameMenu
         case NativeMenu::Load: return 10;
         case NativeMenu::Quit: return 11;
         case NativeMenu::AutoPush: return 12;
+        case NativeMenu::Bindings: return 13;
+        case NativeMenu::AspectLimit: return 14;
         default: return -1;
         }
     }
@@ -243,7 +245,18 @@ namespace GameMenu
     void Change(int delta)
     {
         const int selection = SelectedRow();
-        if (selection == 12) Game::Toggle(Game::Option::AutoPush);
+        if (selection == 13)
+        {
+            auto& bindings = Game::GetSettings().hdControls;
+            bindings = !bindings.load();
+        }
+        else if (selection == 14)
+        {
+            auto& aspect = Game::GetSettings().maxAspectRatio;
+            aspect = NativeMenu::ChangeAspect(aspect.load(), delta);
+            Game::onSettingsChanged().executeAll();
+        }
+        else if (selection == 12) Game::Toggle(Game::Option::AutoPush);
         else if (selection == 4)
         {
             auto& mode = Game::GetSettings().keyboardRunMode;
@@ -553,6 +566,10 @@ void Menu::Draw(void* renderer, void* device, void* flat, void* textured)
     panel(-viewport.x / scale, -viewport.y / scale, width / scale, height / scale, 0xB0000000);
     const auto value = [&](NativeMenu::Action action) -> std::wstring
     {
+        if (action == NativeMenu::Bindings)
+            return Localization::Text(Game::GetSettings().hdControls ? "Remaster" : "Original");
+        if (action == NativeMenu::AspectLimit)
+            return NativeMenu::AspectName(Game::GetSettings().maxAspectRatio.load());
         if (action == NativeMenu::Controls)
             return Localization::Text(Game::Enabled(Game::Option::AlternateControls) ? "Alternate" : "Original");
         if (action == NativeMenu::RunMode)

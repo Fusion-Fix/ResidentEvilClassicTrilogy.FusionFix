@@ -210,3 +210,40 @@ Spingi gli oggetti senza rilasciare il tasto corsa.
 
 [Applies to alternate movement controls.]
 Si applica ai comandi di movimento alternativi.
+
+
+[Bindings]
+Comandi
+
+[Remaster]
+Remaster
+
+[Aspect limit]
+Formato massimo
+
+[Portable settings]
+Opzioni portatili
+
+[System]
+Sistema
+
+[Remaster: WASD and HD Remaster buttons.]
+Remaster: WASD e tasti HD Remaster.
+
+[Original: use the native custom bindings.]
+Originale: comandi nativi personalizzati.
+
+[Set the widest aspect used by widescreen.]
+Scegli il formato massimo dello schermo.
+
+[16:9 is the default; narrower screens adapt.]
+Predefinito: 16:9; schermi stretti adattati.
+
+[Save native settings beside the game.]
+Salva le opzioni accanto al gioco.
+
+[Restart the game to apply this change.]
+Riavvia il gioco per applicare la modifica.
+
+[Choose where native settings are stored.]
+Scegli dove salvare le opzioni native.

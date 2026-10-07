@@ -213,3 +213,40 @@ Poussez les objets sans relâcher la touche de course.
 
 [Applies to alternate movement controls.]
 Pour les commandes de déplacement alternatives.
+
+
+[Bindings]
+Touches
+
+[Remaster]
+Remaster
+
+[Aspect limit]
+Ratio maximal
+
+[Portable settings]
+Options portables
+
+[System]
+Système
+
+[Remaster: WASD and HD Remaster buttons.]
+Remaster : WASD et touches HD Remaster.
+
+[Original: use the native custom bindings.]
+Original : touches natives personnalisées.
+
+[Set the widest aspect used by widescreen.]
+Choisir le ratio maximal du mode large.
+
+[16:9 is the default; narrower screens adapt.]
+16:9 par défaut ; les écrans étroits adaptent.
+
+[Save native settings beside the game.]
+Enregistrer les options près du jeu.
+
+[Restart the game to apply this change.]
+Redémarrer le jeu pour appliquer ce choix.
+
+[Choose where native settings are stored.]
+Choisir où enregistrer les options natives.

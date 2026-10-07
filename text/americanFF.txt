@@ -213,3 +213,40 @@ Push objects without releasing the run button.
 
 [Applies to alternate movement controls.]
 Applies to alternate movement controls.
+
+
+[Bindings]
+Bindings
+
+[Remaster]
+Remaster
+
+[Aspect limit]
+Aspect limit
+
+[Portable settings]
+Portable settings
+
+[System]
+System
+
+[Remaster: WASD and HD Remaster buttons.]
+Remaster: WASD and HD Remaster buttons.
+
+[Original: use the native custom bindings.]
+Original: use the native custom bindings.
+
+[Set the widest aspect used by widescreen.]
+Set the widest aspect used by widescreen.
+
+[16:9 is the default; narrower screens adapt.]
+16:9 is the default; narrower screens adapt.
+
+[Save native settings beside the game.]
+Save native settings beside the game.
+
+[Restart the game to apply this change.]
+Restart the game to apply this change.
+
+[Choose where native settings are stored.]
+Choose where native settings are stored.

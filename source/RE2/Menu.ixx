@@ -1,6 +1,7 @@
 module;
 #include <common.hxx>
 #include <safetyhook.hpp>
+#include "../MouseInput.hxx"
 
 export module RE2Menu;
 import common;
@@ -18,6 +19,7 @@ namespace RE2Menu
 
     int __cdecl Movie()
     {
+        MouseInput::Reset();
         // WinMain bypasses Main while an FMV is active. Poll the controller
         // here too, before the movie checks the native pressed-button packet.
         // Keep playback pending while the Fusion Fix menu pauses the movie.

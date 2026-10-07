@@ -6,6 +6,7 @@ module;
 #include "ClassicPresentation.hxx"
 #include "NativeMenu.hxx"
 #include "NativeFont.hxx"
+#include "MouseInput.hxx"
 
 export module ClassicMenu;
 import ClassicGame;
@@ -48,6 +49,7 @@ export namespace ClassicMenu
     {
         const bool wasOpen = opened;
         opened = confirmation = false;
+        MouseInput::Reset();
         if (wasOpen) for (const auto& callback : pause) callback(false);
         if (snapshot) { snapshot->Release(); snapshot = nullptr; }
     }
@@ -59,7 +61,7 @@ export namespace ClassicMenu
         case NativeMenu::Resume: return 0;
         case NativeMenu::Widescreen: return 1;
         case NativeMenu::Controls: return 2;
-        case NativeMenu::RunMode: return 3;
+        case NativeMenu::DefaultPace: return 3;
         case NativeMenu::SkipIntro: return 4;
         case NativeMenu::SkipDoors: return 5;
         case NativeMenu::FastLoad: return 6;
@@ -71,6 +73,9 @@ export namespace ClassicMenu
         case NativeMenu::Bindings: return 12;
         case NativeMenu::AspectLimit: return 13;
         case NativeMenu::Portable: return 14;
+        case NativeMenu::MouseSteering: return 15;
+        case NativeMenu::MouseSensitivity: return 16;
+        case NativeMenu::ShiftBehavior: return 17;
         default: return -1;
         }
     }
@@ -85,7 +90,24 @@ export namespace ClassicMenu
     {
         const int selection = SelectedRow();
         auto& settings = ClassicGame::GetSettings();
-        if (selection == 12)
+        if (selection == 15)
+        {
+            auto& enabled = ClassicGame::GetSettings().mouseSteering;
+            enabled = !enabled.load();
+            MouseInput::Reset();
+        }
+        else if (selection == 17)
+        {
+            auto& toggle = ClassicGame::GetSettings().shiftToggle;
+            toggle = !toggle.load();
+        }
+        else if (selection == 16)
+        {
+            auto& sensitivity = ClassicGame::GetSettings().mouseSensitivity;
+            sensitivity = std::clamp(sensitivity.load() + delta * 0.25f, 0.25f, 4.0f);
+            MouseInput::Reset();
+        }
+        else if (selection == 12)
         {
             auto& bindings = ClassicGame::GetSettings().hdControls;
             bindings = !bindings.load();
@@ -98,7 +120,7 @@ export namespace ClassicMenu
         }
         else if (selection == 14) ClassicGame::GetSettings().portableMode = !ClassicGame::GetSettings().portableMode;
         else if (selection == 11) ClassicGame::Toggle(ClassicGame::Option::AutoPush);
-        else if (selection == 3) settings.keyboardRunMode = (settings.keyboardRunMode.load() + delta + 4) % 4;
+        else if (selection == 3) settings.defaultRun = !settings.defaultRun.load();
         else if (selection == 8) settings.loadSlot = (std::clamp(settings.loadSlot.load(), 0, maxSlot) + delta + maxSlot + 1) % (maxSlot + 1);
         else if (selection >= 1 && selection <= 7)
             ClassicGame::Toggle(ClassicGame::Option(selection - 1 - int(selection > 3)));
@@ -141,6 +163,9 @@ export namespace ClassicMenu
     bool Message(HWND target, UINT message, WPARAM key, LPARAM flags)
     {
         window = target;
+        MouseInput::WheelMessage(message, key, ClassicGame::Enabled(ClassicGame::Option::PanAndScan)
+            && !opened && !ClassicInput::InNativeMenu());
+        MouseInput::Message(target, message, flags, ClassicGame::GetSettings().mouseSteering, opened);
         if (message == WM_KEYDOWN) menu.controller = false;
         if (message == WM_CLOSE || message == WM_DESTROY || message == WM_DISPLAYCHANGE)
         {
@@ -169,6 +194,7 @@ export namespace ClassicMenu
 
     bool Update()
     {
+        if (opened || ClassicInput::gameInputSuppressed || (ClassicInput::nativeMenu && ClassicInput::nativeMenu())) MouseInput::Reset();
         ClassicInput::Update();
         const auto& pad = ClassicInput::pad;
         const bool toggle = request.exchange(false)
@@ -181,6 +207,7 @@ export namespace ClassicMenu
             {
                 if (!Capture(lastDraw, lastSurface)) return false;
                 if (availableSlots) maxSlot = std::clamp(availableSlots(), 0, 65535);
+                MouseInput::Reset();
                 opened = true; confirmation = false; menu.Reset();
                 for (const auto& callback : pause) callback(true);
             }
@@ -271,19 +298,26 @@ export namespace ClassicMenu
         };
         const auto value = [&](NativeMenu::Action action) -> std::wstring
         {
-            if (action == NativeMenu::Bindings)
-            return Localization::Text(ClassicGame::GetSettings().hdControls ? "Remaster" : "Original");
-        if (action == NativeMenu::AspectLimit)
-            return NativeMenu::AspectName(ClassicGame::GetSettings().maxAspectRatio.load());
-        if (action == NativeMenu::Portable)
-            return Localization::Text(ClassicGame::GetSettings().portableMode ? "On" : "Off");
-        if (action == NativeMenu::Controls)
-                return Localization::Text(ClassicGame::Enabled(ClassicGame::Option::AlternateControls) ? "Alternate" : "Original");
-            if (action == NativeMenu::RunMode)
+            if (action == NativeMenu::MouseSteering)
+                return Localization::Text(ClassicGame::GetSettings().mouseSteering ? "On" : "Off");
+            if (action == NativeMenu::MouseSensitivity)
             {
-                constexpr const char* modes[] = { "Hold: run", "Toggle: run", "Hold: walk", "Toggle: walk" };
-                return Localization::Text(modes[ClassicGame::GetSettings().keyboardRunMode]);
+                auto number = std::to_wstring(ClassicGame::GetSettings().mouseSensitivity.load());
+                number.resize(number.find(L'.') + 3);
+                return number;
             }
+            if (action == NativeMenu::Bindings)
+                return Localization::Text(ClassicGame::GetSettings().hdControls ? "Remaster" : "Original");
+            if (action == NativeMenu::AspectLimit)
+                return NativeMenu::AspectName(ClassicGame::GetSettings().maxAspectRatio.load());
+            if (action == NativeMenu::Portable)
+                return Localization::Text(ClassicGame::GetSettings().portableMode ? "On" : "Off");
+            if (action == NativeMenu::Controls)
+                return Localization::Text(ClassicGame::Enabled(ClassicGame::Option::AlternateControls) ? "Alternate" : "Original");
+            if (action == NativeMenu::DefaultPace)
+                return Localization::Text(ClassicGame::GetSettings().defaultRun.load() ? "Run" : "Walk");
+            if (action == NativeMenu::ShiftBehavior)
+                return Localization::Text(ClassicGame::GetSettings().shiftToggle.load() ? "Toggle" : "Hold");
             if (action == NativeMenu::LoadSlot)
             {
                 const int slot = ClassicGame::GetSettings().loadSlot;

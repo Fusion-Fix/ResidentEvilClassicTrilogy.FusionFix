@@ -19,13 +19,18 @@ export namespace Game
     struct Settings
     {
         std::array<std::atomic<bool>, 8> enabled;
-        std::atomic<int> keyboardRunMode = 0, loadSlot = 0;
-        std::atomic<bool> hdControls = true;
+        std::atomic<int> loadSlot = 0;
+        std::atomic<bool> defaultRun = false, shiftToggle = false;
+        std::atomic<bool> hdControls = true, mouseSteering = false;
+        std::atomic<float> mouseSensitivity = 1.0f;
         std::atomic<float> maxAspectRatio = 16.0f / 9.0f;
 
         Settings()
         {
             CIniReader reader("");
+            mouseSteering = reader.ReadInteger("MAIN", "MouseSteering", 0) != 0;
+            const float sensitivity = reader.ReadFloat("MAIN", "MouseSensitivity", 1.0f);
+            mouseSensitivity = std::isfinite(sensitivity) ? std::clamp(sensitivity, 0.25f, 4.0f) : 1.0f;
             hdControls = reader.ReadInteger("MAIN", "HDControls", 1) != 0;
             maxAspectRatio = Presentation::ParseAspectRatio(reader.ReadString("MAIN", "MaxAspectRatio", "16:9"));
             enabled[0] = reader.ReadInteger("MAIN", "WobbleFix", 1) != 0;
@@ -36,7 +41,8 @@ export namespace Game
             enabled[5] = reader.ReadInteger("MAIN", "FastLoad", 0) != 0;
             enabled[6] = reader.ReadInteger("MAIN", "AutoLoad", 0) != 0;
             enabled[7] = reader.ReadInteger("MAIN", "AutoPush", 1) != 0;
-            keyboardRunMode = std::clamp(reader.ReadInteger("MAIN", "KeyboardRunMode", 0), 0, 3);
+            defaultRun = reader.ReadInteger("MAIN", "DefaultPace", 0) != 0;
+            shiftToggle = reader.ReadInteger("MAIN", "ShiftBehavior", 0) != 0;
             loadSlot = std::clamp(reader.ReadInteger("MAIN", "LoadSlot", 0), 0, 30);
         }
     };
@@ -59,9 +65,12 @@ export namespace Game
         CIniReader reader("");
         for (size_t i = 0; i < optionNames.size(); ++i)
             reader.WriteInteger("MAIN", optionNames[i], int(GetSettings().enabled[i].load()), true);
+        reader.WriteInteger("MAIN", "MouseSteering", int(GetSettings().mouseSteering.load()), true);
+        reader.WriteString("MAIN", "MouseSensitivity", std::to_string(GetSettings().mouseSensitivity.load()), true);
         reader.WriteInteger("MAIN", "HDControls", int(GetSettings().hdControls.load()), true);
         reader.WriteString("MAIN", "MaxAspectRatio", std::to_string(GetSettings().maxAspectRatio.load()), true);
-        reader.WriteInteger("MAIN", "KeyboardRunMode", GetSettings().keyboardRunMode.load(), true);
+        reader.WriteInteger("MAIN", "DefaultPace", int(GetSettings().defaultRun.load()), true);
+        reader.WriteInteger("MAIN", "ShiftBehavior", int(GetSettings().shiftToggle.load()), true);
         reader.WriteInteger("MAIN", "LoadSlot", GetSettings().loadSlot.load(), true);
     }
 

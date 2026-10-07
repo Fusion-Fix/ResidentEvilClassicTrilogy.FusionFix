@@ -103,8 +103,8 @@ Return there to load a saved game.
 [Fill the screen with a moving camera view.]
 Fill the screen with a moving camera view.
 
-[Menus retain their original proportions.]
-Menus retain their original proportions.
+[Right stick / mouse wheel: look up/down.]
+Right stick / mouse wheel: look up/down.
 
 [Original: turn and move relative to the player.]
 Original: turn and move relative to the player.
@@ -250,3 +250,46 @@ Restart the game to apply this change.
 
 [Choose where native settings are stored.]
 Choose where native settings are stored.
+
+
+[Mouse steering]
+Mouse steering
+
+[Mouse sensitivity]
+Mouse sensitivity
+
+[Turn while standing, walking or running.]
+Turn while standing, walking or running.
+
+[While aiming, also aim up/down with the mouse.]
+While aiming, also aim up/down with the mouse.
+
+[Adjust mouse turning and vertical aim response.]
+Adjust mouse turning and vertical aim response.
+
+[Only affects mouse steering.]
+Only affects mouse steering.
+
+[Default pace]
+Default pace
+
+[Shift behavior]
+Shift behavior
+
+[Walk]
+Walk
+
+[Run]
+Run
+
+[Hold]
+Hold
+
+[Toggle]
+Toggle
+
+[Choose whether you normally walk or run.]
+Choose whether you normally walk or run.
+
+[Hold Shift, or press it to switch pace.]
+Hold Shift, or press it to switch pace.

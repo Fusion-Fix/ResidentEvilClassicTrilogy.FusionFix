@@ -3,8 +3,8 @@
 // Shared navigation and layout; each engine retains its own rendering and pause hooks.
 namespace NativeMenu
 {
-    enum Action { Resume, Widescreen, Controls, RunMode, SkipIntro, SkipDoors,
-        FastLoad, AutoLoad, LoadSlot, Load, Quit, Wobble, DisplayPage, ControlsPage, GamePage, Back, AutoPush, Bindings, AspectLimit, Portable, SystemPage };
+    enum Action { Resume, Widescreen, Controls, DefaultPace, SkipIntro, SkipDoors,
+        FastLoad, AutoLoad, LoadSlot, Load, Quit, Wobble, DisplayPage, ControlsPage, GamePage, Back, AutoPush, Bindings, AspectLimit, Portable, SystemPage, MouseSteering, MouseSensitivity, ShiftBehavior };
     enum class Page { Pause, Display, Controls, Game, System };
     struct State
     {
@@ -17,7 +17,7 @@ namespace NativeMenu
             switch (page)
             {
             case Page::Display: return game == 3 ? std::vector<Action>{ Widescreen, AspectLimit, Wobble, Back } : std::vector<Action>{ Widescreen, AspectLimit, Back };
-            case Page::Controls: return { Controls, Bindings, RunMode, Back };
+            case Page::Controls: return { Controls, Bindings, DefaultPace, ShiftBehavior, MouseSteering, MouseSensitivity, Back };
             case Page::Game: return game == 1
                 ? std::vector<Action>{ SkipIntro, SkipDoors, FastLoad, AutoLoad, LoadSlot, Back }
                 : std::vector<Action>{ SkipIntro, SkipDoors, FastLoad, AutoLoad, LoadSlot, AutoPush, Back };
@@ -59,8 +59,8 @@ namespace NativeMenu
     }
     inline const char* Label(Action action)
     {
-        constexpr const char* names[] = { "Continue", "Widescreen", "Control type", "Shift key", "Skip intro", "Skip doors",
-            "Fast load", "Auto load", "Load slot", "Load game", "Exit game", "Wobble fix", "Display", "Controls", "Game options", "Return", "Auto push", "Bindings", "Aspect limit", "Portable settings", "System" };
+        constexpr const char* names[] = { "Continue", "Widescreen", "Control type", "Default pace", "Skip intro", "Skip doors",
+            "Fast load", "Auto load", "Load slot", "Load game", "Exit game", "Wobble fix", "Display", "Controls", "Game options", "Return", "Auto push", "Bindings", "Aspect limit", "Portable settings", "System", "Mouse steering", "Mouse sensitivity", "Shift behavior" };
         return names[action];
     }
     inline std::array<const char*, 2> Help(Action action, bool canLoad)
@@ -70,13 +70,16 @@ namespace NativeMenu
         case Resume: return { "Return to the game.", "" };
         case Load: return canLoad ? std::array<const char*, 2>{ "Load the save selected in Game options.", "" }
             : std::array<const char*, 2>{ "Loading is available from the title screen.", "Return there to load a saved game." };
-        case Widescreen: return { "Fill the screen with a moving camera view.", "Menus retain their original proportions." };
+        case Widescreen: return { "Fill the screen with a moving camera view.", "Right stick / mouse wheel: look up/down." };
         case Controls: return { "Original: turn and move relative to the player.", "Alternate: move in the direction you press." };
         case Bindings: return { "Remaster: WASD and HD Remaster buttons.", "Original: use the native custom bindings." };
         case AspectLimit: return { "Set the widest aspect used by widescreen.", "16:9 is the default; narrower screens adapt." };
         case Portable: return { "Save native settings beside the game.", "Restart the game to apply this change." };
         case SystemPage: return { "Choose where native settings are stored.", "" };
-        case RunMode: return { "Choose how Shift switches walking and running.", "Applies to alternate keyboard controls." };
+        case MouseSteering: return { "Turn while standing, walking or running.", "While aiming, also aim up/down with the mouse." };
+        case MouseSensitivity: return { "Adjust mouse turning and vertical aim response.", "Only affects mouse steering." };
+        case DefaultPace: return { "Choose whether you normally walk or run.", "Applies to alternate keyboard controls." };
+        case ShiftBehavior: return { "Hold Shift, or press it to switch pace.", "Applies to alternate keyboard controls." };
         case SkipIntro: return { "Go straight to the title menu on startup.", "Story movies are still played." };
         case SkipDoors: return { "Skip door animations between rooms.", "The next room still loads normally." };
         case FastLoad: return { "Skip the recap text after loading a save.", "Story dialogue is unaffected." };

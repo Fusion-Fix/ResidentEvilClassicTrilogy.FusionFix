@@ -10,6 +10,7 @@ module;
 #include "Presentation.hxx"
 #include "NativeMenu.hxx"
 #include "NativeFont.hxx"
+#include "MouseInput.hxx"
 
 export module Menu;
 import common;
@@ -209,6 +210,7 @@ namespace GameMenu
             pauseClock = false;
         }
         Menu::opened = confirmation = false;
+        MouseInput::Reset();
         Input::suppressUntilRelease = true;
         *game.held = *game.pressed = 0;
     }
@@ -221,7 +223,7 @@ namespace GameMenu
         case NativeMenu::Wobble: return 1;
         case NativeMenu::Widescreen: return 2;
         case NativeMenu::Controls: return 3;
-        case NativeMenu::RunMode: return 4;
+        case NativeMenu::DefaultPace: return 4;
         case NativeMenu::SkipIntro: return 5;
         case NativeMenu::SkipDoors: return 6;
         case NativeMenu::FastLoad: return 7;
@@ -232,6 +234,9 @@ namespace GameMenu
         case NativeMenu::AutoPush: return 12;
         case NativeMenu::Bindings: return 13;
         case NativeMenu::AspectLimit: return 14;
+        case NativeMenu::MouseSteering: return 15;
+        case NativeMenu::MouseSensitivity: return 16;
+        case NativeMenu::ShiftBehavior: return 17;
         default: return -1;
         }
     }
@@ -245,7 +250,24 @@ namespace GameMenu
     void Change(int delta)
     {
         const int selection = SelectedRow();
-        if (selection == 13)
+        if (selection == 15)
+        {
+            auto& enabled = Game::GetSettings().mouseSteering;
+            enabled = !enabled.load();
+            MouseInput::Reset();
+        }
+        else if (selection == 17)
+        {
+            auto& toggle = Game::GetSettings().shiftToggle;
+            toggle = !toggle.load();
+        }
+        else if (selection == 16)
+        {
+            auto& sensitivity = Game::GetSettings().mouseSensitivity;
+            sensitivity = std::clamp(sensitivity.load() + delta * 0.25f, 0.25f, 4.0f);
+            MouseInput::Reset();
+        }
+        else if (selection == 13)
         {
             auto& bindings = Game::GetSettings().hdControls;
             bindings = !bindings.load();
@@ -259,8 +281,8 @@ namespace GameMenu
         else if (selection == 12) Game::Toggle(Game::Option::AutoPush);
         else if (selection == 4)
         {
-            auto& mode = Game::GetSettings().keyboardRunMode;
-            mode = (mode.load() + delta + 4) % 4;
+            auto& pace = Game::GetSettings().defaultRun;
+            pace = !pace.load();
         }
         else if (selection == 9)
         {
@@ -320,6 +342,7 @@ namespace GameMenu
             else if (Menu::rendererReady)
             {
                 Menu::opened = true;
+                MouseInput::Reset();
                 Input::suppressUntilRelease = true;
                 pauseClock = playTimeAnchor && frameCounter && (*game.flags & 0x08000000);
                 if (pauseClock) pauseTime = frameCounter(-1);
@@ -365,6 +388,7 @@ namespace GameMenu
         DWORD process = 0;
         GetWindowThreadProcessId(GetForegroundWindow(), &process);
         const bool focused = process == GetCurrentProcessId();
+        if (Menu::opened || !game.Controllable() || (*game.flags & 0x10000) || Input::suppressUntilRelease) MouseInput::Reset();
         if (focused && !window) window = GetForegroundWindow();
         const auto key = [&](int code) { return focused && (GetAsyncKeyState(code) & 0x8000) != 0; };
         const auto pad = Input::GetPad();
@@ -383,6 +407,9 @@ namespace GameMenu
     int __fastcall WindowHook(void* application, void*, UINT message, WPARAM wparam, LPARAM lparam)
     {
         window = Read<HWND>(application, 40);
+        MouseInput::WheelMessage(message, wparam, Game::Enabled(Game::Option::PanAndScan)
+            && !Menu::opened && game.Controllable() && !(*game.flags & 0x10000));
+        MouseInput::Message(window, message, lparam, Game::GetSettings().mouseSteering, Menu::opened);
         if (message == WM_KEYDOWN) inputDevice = 0;
         if (message == WM_KILLFOCUS)
         {
@@ -566,17 +593,23 @@ void Menu::Draw(void* renderer, void* device, void* flat, void* textured)
     panel(-viewport.x / scale, -viewport.y / scale, width / scale, height / scale, 0xB0000000);
     const auto value = [&](NativeMenu::Action action) -> std::wstring
     {
+        if (action == NativeMenu::MouseSteering)
+            return Localization::Text(Game::GetSettings().mouseSteering ? "On" : "Off");
+        if (action == NativeMenu::MouseSensitivity)
+        {
+            auto number = std::to_wstring(Game::GetSettings().mouseSensitivity.load());
+            number.resize(number.find(L'.') + 3); return number;
+        }
         if (action == NativeMenu::Bindings)
             return Localization::Text(Game::GetSettings().hdControls ? "Remaster" : "Original");
         if (action == NativeMenu::AspectLimit)
             return NativeMenu::AspectName(Game::GetSettings().maxAspectRatio.load());
         if (action == NativeMenu::Controls)
             return Localization::Text(Game::Enabled(Game::Option::AlternateControls) ? "Alternate" : "Original");
-        if (action == NativeMenu::RunMode)
-        {
-            constexpr const char* modes[] = { "Hold: run", "Toggle: run", "Hold: walk", "Toggle: walk" };
-            return Localization::Text(modes[Game::GetSettings().keyboardRunMode.load()]);
-        }
+        if (action == NativeMenu::DefaultPace)
+            return Localization::Text(Game::GetSettings().defaultRun.load() ? "Run" : "Walk");
+        if (action == NativeMenu::ShiftBehavior)
+            return Localization::Text(Game::GetSettings().shiftToggle.load() ? "Toggle" : "Hold");
         if (action == NativeMenu::LoadSlot)
         {
             const int slot = Game::GetSettings().loadSlot.load();

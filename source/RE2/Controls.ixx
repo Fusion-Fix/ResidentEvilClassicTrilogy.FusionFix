@@ -3,6 +3,7 @@ module;
 #include <safetyhook.hpp>
 #include "ClassicPresentation.hxx"
 #include "HDControls.hxx"
+#include "../MouseInput.hxx"
 
 export module RE2Controls;
 import common;
@@ -47,6 +48,7 @@ namespace RE2Controls
     uint32_t* control = nullptr;
     void* view = nullptr;
     Presentation::Heading heading;
+    MouseInput::MovingHeading mouseHeading;
     bool moving = false;
     bool pushContact = false;
     int16_t contactYaw = 0;
@@ -89,14 +91,28 @@ namespace RE2Controls
 
     uintptr_t __cdecl Movement(void* player)
     {
-        const auto originalHeld = *held, originalPressed = *pressed;
+        MouseInput::NativeInput mouse(held, pressed);
+        bool mouseMovement = false;
+        auto originalHeld = *held; const auto originalPressed = *pressed;
         const auto& pad = ClassicInput::pad;
-        const bool ownPlayer = *game && player == static_cast<uint8_t*>(*game) + 14864 && !(*control & 0x2000);
+        const bool isPlayer = *game && player == static_cast<uint8_t*>(*game) + 14864;
+        const bool ownPlayer = isPlayer && !(*control & 0x2000);
         const bool contact = ownPlayer && pushContact;
         if (ownPlayer) pushContact = false;
         const auto routine = Read<uint8_t>(player, 5);
         const bool pushing = routine == 10;
         const bool recovering = routine == 9 && Read<uint8_t>(player, 7) > 4;
+        if (isPlayer)
+        {
+            const bool aim = (originalHeld & 0x100) && routine == 5;
+            const bool allowed = ownPlayer && ClassicGame::GetSettings().mouseSteering && !ClassicInput::gameInputSuppressed
+                && Read<uint8_t>(player, 4) == 1 && (routine <= 4 || aim)
+                && !(ClassicInput::nativeMenu && ClassicInput::nativeMenu());
+            const bool alternateMoving = ClassicGame::Enabled(ClassicGame::Option::AlternateControls)
+                && !aim && !pad.dpad && ((originalHeld & 15) || pad.left.Moving());
+            mouse.Apply(allowed, aim, true, ClassicGame::GetSettings().mouseSensitivity, alternateMoving);
+            originalHeld = *held;
+        }
         if (ownPlayer) actions.Update(ClassicInput::HDState());
         const bool hd = ClassicGame::GetSettings().hdControls && !ClassicInput::gameInputSuppressed;
         if (hd && ownPlayer && actions.reload && Read<uint8_t>(player, 4) == 1
@@ -110,15 +126,15 @@ namespace RE2Controls
         {
             Write(player, 118, yaw); Write(player, 4, uint32_t(1));
             *held &= ~0x20Fu; *pressed &= ~0x20Fu;
-            heading.Reset(); moving = false;
+            heading.Reset(); mouseHeading.Reset(); moving = false;
         }
         else if (ownPlayer && pad.dpad)
         {
-            *held = (originalHeld & ~15u) | pad.dpad;
-            *pressed = (originalPressed & ~15u) | pad.pressedDpad;
-            heading.Reset(); moving = false;
+            *held = (originalHeld & ~15u) | pad.dpad | mouse.horizontalHeld;
+            *pressed = (originalPressed & ~15u) | pad.pressedDpad | mouse.horizontalPressed;
+            heading.Reset(); mouseHeading.Reset(); moving = false;
         }
-        else if (ownPlayer && ClassicGame::Enabled(ClassicGame::Option::AlternateControls)
+        else if (!mouse.turning && ownPlayer && ClassicGame::Enabled(ClassicGame::Option::AlternateControls)
             && Read<uint8_t>(player, 4) == 1 && (routine <= 4 || recovering || pushing) && !(originalHeld & 0x100))
         {
             const bool stick = pad.connected && pad.left.Moving();
@@ -128,7 +144,9 @@ namespace RE2Controls
             *pressed = originalPressed & ~0x21Fu;
             if (direction.Moving())
             {
-                const auto nextYaw = heading.Update(direction, float(Read<int16_t>(view)), float(Read<int16_t>(view, 4)));
+                const auto nextYaw = mouseHeading.Prepare(heading.Update(direction, float(Read<int16_t>(view)), float(Read<int16_t>(view, 4))),
+                    ClassicGame::GetSettings().mouseSteering && !pushing);
+                mouseMovement = !pushing;
                 // Collision records only native pushable contact. Drop running
                 // while approaching that object so the native hold timer and
                 // walk-to-push transition can run at their original speed.
@@ -146,15 +164,20 @@ namespace RE2Controls
                 }
                 if (forward)
                 {
-                    *held |= 0x11u | (!pushing && !approaching && run ? 0x200u : 0u);
+                    *held |= 0x11u | (!pushing && !approaching && run ? 0x200u : 0u) | (!pushing ? mouse.horizontalHeld : 0u);
+                    if (!pushing) *pressed |= mouse.horizontalPressed;
                     if (!moving) *pressed |= 0x11;
                 }
                 moving = forward;
             }
-            else { heading.Reset(); moving = false; }
+            else { heading.Reset(); mouseHeading.Reset(); moving = false; }
         }
-        else { heading.Reset(); moving = false; }
+        else { heading.Reset(); mouseHeading.Reset(); moving = false; }
+        const auto beforeMouseTurn = Read<int16_t>(player, 118);
+        const auto nativeHeld = *held;
         const auto result = shMovement.unsafe_ccall<uintptr_t>(player);
+        if (mouse.horizontalHeld) Write(player, 118, mouse.Accelerate(beforeMouseTurn, Read<int16_t>(player, 118), nativeHeld));
+        if (mouseMovement) mouseHeading.Record(Read<int16_t>(player, 118), mouse.horizontalHeld != 0);
         *held = originalHeld;
         *pressed = originalPressed;
         return result;

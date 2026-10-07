@@ -144,10 +144,16 @@ export namespace ClassicInput
     bool Run(const Presentation::Direction& direction, bool stick)
     {
         static bool shiftHeld = false, toggled = false, stickRunning = false;
-        static int previousMode = -1;
-        const int mode = ClassicGame::GetSettings().keyboardRunMode.load(std::memory_order_relaxed);
-        if (mode != previousMode) { toggled = false; shiftHeld = shift; previousMode = mode; }
-        if (!stick && (mode & 1) && shift && !shiftHeld) toggled = !toggled;
+        static bool previousPace = false, previousBehavior = false, initialized = false;
+        const bool defaultRun = ClassicGame::GetSettings().defaultRun.load(std::memory_order_relaxed);
+        const bool shiftToggle = ClassicGame::GetSettings().shiftToggle.load(std::memory_order_relaxed);
+        if (!initialized || defaultRun != previousPace || shiftToggle != previousBehavior)
+        {
+            toggled = false; shiftHeld = shift;
+            previousPace = defaultRun; previousBehavior = shiftToggle;
+            initialized = true;
+        }
+        if (!stick && shiftToggle && shift && !shiftHeld) toggled = !toggled;
         shiftHeld = shift;
         if (stick)
         {
@@ -155,6 +161,6 @@ export namespace ClassicInput
             return stickRunning || (ClassicGame::GetSettings().hdControls && (pad.buttons & HDControls::X));
         }
         stickRunning = false;
-        return (mode >= 2) != ((mode & 1) ? toggled : shift);
+        return defaultRun != (shiftToggle ? toggled : shift);
     }
 }

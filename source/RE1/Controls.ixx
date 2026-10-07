@@ -3,6 +3,7 @@ module;
 #include <safetyhook.hpp>
 #include "ClassicPresentation.hxx"
 #include "HDControls.hxx"
+#include "../MouseInput.hxx"
 
 export module RE1Controls;
 import common;
@@ -26,6 +27,7 @@ namespace RE1Controls
     uint16_t* taskFlags = nullptr;
     void* view = nullptr;
     Presentation::Heading heading;
+    MouseInput::MovingHeading mouseHeading;
     bool moving = false;
     HDControls::Actions actions;
     HDControls::QuickTurn quickTurn;
@@ -66,9 +68,10 @@ namespace RE1Controls
 
     void __cdecl Movement()
     {
-        const auto originalHeld = *held, originalPressed = *pressed;
+        MouseInput::NativeInput mouse(held, pressed);
+        auto originalHeld = *held; const auto originalPressed = *pressed;
         const auto originalPrevious = *previousHeld;
-        bool mapInput = false;
+        bool mapInput = false, mouseMovement = false;
         const auto& pad = ClassicInput::pad;
         // The native dispatcher separates normal motion, scripted interactions,
         // weapons and damage into distinct branches.
@@ -81,6 +84,14 @@ namespace RE1Controls
         const bool controllable = (*taskFlags & 0x100) && !(player[3] & 0x20)
             && player[132] == 1 && !ClassicInput::gameInputSuppressed;
         const bool scripted = !controllable || (*control & 0x10000000) || player[133] >= 2;
+        const bool aim = (originalHeld & 0x100) && player[133] == 3;
+        const bool mouseAllowed = ClassicGame::GetSettings().mouseSteering && controllable
+            && !(*control & 0x10000000) && (normal || running || aim)
+            && !(ClassicInput::nativeMenu && ClassicInput::nativeMenu());
+        const bool alternateMoving = ClassicGame::Enabled(ClassicGame::Option::AlternateControls)
+            && !aim && !pad.dpad && ((originalHeld & 15) || pad.left.Moving());
+        mouse.Apply(mouseAllowed, aim, true, ClassicGame::GetSettings().mouseSensitivity, alternateMoving);
+        originalHeld = *held;
         actions.Update(ClassicInput::HDState());
         const bool hd = ClassicGame::GetSettings().hdControls && !ClassicInput::gameInputSuppressed;
         if (hd && controllable && actions.reload && player[133] == 3 && player[134] == 19
@@ -94,16 +105,16 @@ namespace RE1Controls
             Write(player, 133, uint8_t(0));
             Write(player, 134, uint16_t(0));
             *held &= ~0x20Fu; *pressed &= ~0x20Fu;
-            heading.Reset(); moving = false; mapInput = true;
+            heading.Reset(); mouseHeading.Reset(); moving = false; mapInput = true;
         }
         else if (!scripted && pad.dpad)
         {
-            *held = (originalHeld & ~15u) | pad.dpad;
-            *pressed = (originalPressed & ~15u) | pad.pressedDpad;
+            *held = (originalHeld & ~15u) | pad.dpad | mouse.horizontalHeld;
+            *pressed = (originalPressed & ~15u) | pad.pressedDpad | mouse.horizontalPressed;
             mapInput = true;
-            heading.Reset(); moving = false;
+            heading.Reset(); mouseHeading.Reset(); moving = false;
         }
-        else if (!scripted && ClassicGame::Enabled(ClassicGame::Option::AlternateControls)
+        else if (!mouse.turning && !scripted && ClassicGame::Enabled(ClassicGame::Option::AlternateControls)
             && (normal || running) && !(originalHeld & 0x100))
         {
             const bool stick = pad.connected && pad.left.Moving();
@@ -114,22 +125,29 @@ namespace RE1Controls
             *pressed = originalPressed & ~0x20Fu;
             if (direction.Moving())
             {
-                const auto nextYaw = heading.Update(direction, float(Read<int16_t>(view)), float(Read<int16_t>(view, 4)));
+                const auto nextYaw = mouseHeading.Prepare(heading.Update(direction, float(Read<int16_t>(view)), float(Read<int16_t>(view, 4))),
+                    ClassicGame::GetSettings().mouseSteering);
+                mouseMovement = true;
                 *yaw = nextYaw;
-                *held |= 1u | (run ? 0x200u : 0u);
+                *held |= 1u | (run ? 0x200u : 0u) | mouse.horizontalHeld;
+                *pressed |= mouse.horizontalPressed;
                 if (!moving) *pressed |= 1;
                 moving = true;
             }
-            else { heading.Reset(); moving = false; }
+            else { heading.Reset(); mouseHeading.Reset(); moving = false; }
         }
-        else { heading.Reset(); moving = false; }
+        else { heading.Reset(); mouseHeading.Reset(); moving = false; }
         // The walk dispatcher compares against the previous logical direction
         // before selecting its animation. Raw left/right input would otherwise
         // restart screen-relative forward motion on every frame.
         if (mapInput && remapped) *previousHeld = (originalPrevious & ~0x20Fu) | (mappedHeld & 0x20Fu);
         mappedHeld = *held;
         remapped = mapInput;
+        const auto beforeMouseTurn = *yaw;
+        const auto nativeHeld = *held;
         shMovement.unsafe_ccall<void>();
+        *yaw = mouse.Accelerate(beforeMouseTurn, *yaw, nativeHeld);
+        if (mouseMovement) mouseHeading.Record(*yaw, mouse.horizontalHeld != 0);
         *held = originalHeld;
         *pressed = originalPressed;
         *previousHeld = originalPrevious;

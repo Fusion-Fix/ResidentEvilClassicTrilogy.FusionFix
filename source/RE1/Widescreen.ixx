@@ -1,6 +1,7 @@
 module;
 #include <common.hxx>
 #include "ClassicDisplay.hxx"
+#include "../MouseInput.hxx"
 #include <safetyhook.hpp>
 #include <d3d.h>
 #include <mmsystem.h>
@@ -95,6 +96,7 @@ namespace RE1Presentation
 
     void __cdecl PlayMovie(int from, int to)
     {
+        MouseInput::Reset();
         movieEnd = to;
         shMoviePlay.unsafe_ccall<void>(from, to);
         Movie();
@@ -344,7 +346,7 @@ namespace RE1Presentation
         }
         else if (context.crop)
             context.pan = pan.Update(PlayerY(renderer), cameraKey, elapsed, ClassicInput::pad.right.y, viewport.SourceHeight());
-        else pan.camera = UINT32_MAX;
+        else { pan.camera = UINT32_MAX; MouseInput::WheelPan(false); }
         roomDrawn = false;
         auto* device = Read<IDirect3DDevice*>(renderer, layout.device);
         if (device && !shMatrix)

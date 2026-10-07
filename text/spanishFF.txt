@@ -103,8 +103,8 @@ Vuelve allí para cargar una partida.
 [Fill the screen with a moving camera view.]
 Llenar la pantalla con una cámara móvil.
 
-[Menus retain their original proportions.]
-Los menús conservan sus proporciones originales.
+[Right stick / mouse wheel: look up/down.]
+Stick derecho / rueda: mirar arriba/abajo.
 
 [Original: turn and move relative to the player.]
 Original: girar y moverse respecto al personaje.
@@ -247,3 +247,46 @@ Reinicia el juego para aplicar el cambio.
 
 [Choose where native settings are stored.]
 Elige dónde guardar las opciones nativas.
+
+
+[Mouse steering]
+Giro con ratón
+
+[Mouse sensitivity]
+Sensibilidad ratón
+
+[Turn while standing, walking or running.]
+Gira parado, caminando o corriendo.
+
+[While aiming, also aim up/down with the mouse.]
+Al apuntar, mueve el ratón arriba/abajo.
+
+[Adjust mouse turning and vertical aim response.]
+Ajusta el giro y la puntería con el ratón.
+
+[Only affects mouse steering.]
+Solo afecta al giro con ratón.
+
+[Default pace]
+Paso normal
+
+[Shift behavior]
+Tecla Mayús
+
+[Walk]
+Caminar
+
+[Run]
+Correr
+
+[Hold]
+Mantener
+
+[Toggle]
+Alternar
+
+[Choose whether you normally walk or run.]
+Elige caminar o correr normalmente.
+
+[Hold Shift, or press it to switch pace.]
+Mantén Mayús o púlsalo para cambiar el paso.

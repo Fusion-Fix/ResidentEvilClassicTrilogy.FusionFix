@@ -103,8 +103,8 @@ Torna lì per caricare una partita.
 [Fill the screen with a moving camera view.]
 Riempi lo schermo con una visuale mobile.
 
-[Menus retain their original proportions.]
-I menu mantengono le proporzioni originali.
+[Right stick / mouse wheel: look up/down.]
+Stick destro / rotella: guarda su/giù.
 
 [Original: turn and move relative to the player.]
 Originali: gira e muoviti rispetto al personaggio.
@@ -247,3 +247,46 @@ Riavvia il gioco per applicare la modifica.
 
 [Choose where native settings are stored.]
 Scegli dove salvare le opzioni native.
+
+
+[Mouse steering]
+Rotazione mouse
+
+[Mouse sensitivity]
+Sensibilità mouse
+
+[Turn while standing, walking or running.]
+Gira da fermo, camminando o correndo.
+
+[While aiming, also aim up/down with the mouse.]
+Mentre miri, usa il mouse anche su/giù.
+
+[Adjust mouse turning and vertical aim response.]
+Regola rotazione e mira con il mouse.
+
+[Only affects mouse steering.]
+Riguarda solo la rotazione con il mouse.
+
+[Default pace]
+Andatura normale
+
+[Shift behavior]
+Tasto Maiusc
+
+[Walk]
+Cammina
+
+[Run]
+Corri
+
+[Hold]
+Tieni premuto
+
+[Toggle]
+Alterna
+
+[Choose whether you normally walk or run.]
+Scegli se camminare o correre normalmente.
+
+[Hold Shift, or press it to switch pace.]
+Tieni Maiusc o premilo per cambiare andatura.

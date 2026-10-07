@@ -37,7 +37,7 @@ The loader is included. Plugins and their INIs live in `plugins/` beside the exe
 
 ### Widescreen with a moving frame
 
-Fill your display while keeping the original proportions. Pan-and-scan follows the character vertically, and the **right stick** lets you look toward either edge of the original background. Let go to return smoothly to automatic framing.
+Fill your display while keeping the original proportions. Pan-and-scan follows the character vertically, and the **right stick** lets you look toward either edge of the original background. Let go to return smoothly to automatic framing. The **mouse wheel** also adjusts vertical framing: scroll up to look up and down to look down. The adjustment holds while stationary and smoothly releases when automatic player-follow panning resumes. Changing camera views resets it. This works even with mouse steering disabled.
 
 The scene is enlarged and cropped vertically from its original 4:3 image. Backgrounds, foreground masks, characters, and effects stay aligned. Inventory screens, menus, and text retain their complete 4:3 layout.
 
@@ -85,6 +85,8 @@ The **RE3-only wobble fix** preserves subpixel model coordinates to reduce visib
 </p>
 
 ### Settings without leaving the game
+
+**Optional mouse steering:** enable **Controls → Mouse steering** to turn with relative mouse movement while standing, walking, or running. While aiming, move the mouse up/down to select the native high, level, or low aim position; move back toward the center to level the weapon, or release aim to reset it. With Remaster bindings, RMB aims and LMB fires. Keyboard/controller directions take priority. Mouse turning also works while walking or running, alongside keyboard, stick, and D-pad movement. In Alternate mode it adds native turning to the current movement heading; releasing movement resets that offset. Sensitivity is adjustable in the same menu. Mouse steering confines the cursor to the game during permitted player control and releases it for menus, movies, scripted sequences, and focus changes.
 
 Press **Esc** or controller **Start** to pause. Each game has its own menu styling, with **Display**, **Controls**, and **Game options** pages, plus **System** in RE1/RE2. Every plugin INI option is available in these menus. **Display → Aspect limit** defaults to **16:9**; **Controls → Bindings** switches between Remaster and native bindings independently of movement. Portable settings take effect after restarting. The selected item explains its effect, and the button hints follow keyboard or controller input. Changes are saved automatically to the INI, and all menu text follows the game's language. **Esc / B** returns to the previous page; **Start** resumes the game.
 
@@ -137,12 +139,15 @@ Edit the matching INI in `plugins/`, or use the in-game menu. The defaults keep 
 
 | Option in `[MAIN]` | Default | What it does |
 |:--|:--:|:--|
-| `PanAndScan` | `0` | Widescreen framing with automatic and right-stick vertical panning |
+| `PanAndScan` | `0` | Widescreen framing with automatic, right-stick, and mouse-wheel vertical panning |
 | `MaxAspectRatio` | `16:9` | Display → Aspect limit; accepts a ratio or decimal |
+| `MouseSteering` | `0` | Controls → Mouse steering; mouse turning while standing, walking, or running; high/level/low aim while aiming |
+| `MouseSensitivity` | `1.0` | Controls → Mouse sensitivity; adjustable from 0.25 to 4.0 |
 | `HDControls` | `1` | Remaster keyboard / XInput bindings, quick turn and manual reload; Controls → Bindings |
 | `AlternateControls` | `0` | Screen-relative keyboard and left-stick movement |
 | `AutoPush` | `1` | RE2/RE3 only: alternate controls automatically switch from running to native-speed pushing; `0` requires walking. RE1 already allows pushing while holding run |
-| `KeyboardRunMode` | `0` | Choose Shift hold/toggle behavior; see below |
+| `DefaultPace` | `0` | Controls → Default pace: 0 = Walk, 1 = Run |
+| `ShiftBehavior` | `0` | Controls → Shift behavior: 0 = Hold, 1 = Toggle |
 | `SkipIntro` | `1` | Skip startup warnings, logos, and the opening movie |
 | `SkipDoor` | `1` | Skip door animations |
 | `FastLoad` | `0` | Skip recap captions after loading |
@@ -151,14 +156,7 @@ Edit the matching INI in `plugins/`, or use the in-game menu. The defaults keep 
 | `PortableMode` | `1` | RE1/RE2 only: System → Portable settings; keep native settings in an INI; restart after changing |
 | `WobbleFix` | `1` | RE3 only: stabilize model geometry |
 
-For alternate keyboard controls, `KeyboardRunMode` selects:
-
-| Value | Movement |
-|:--:|:--|
-| `0` | Walk by default; hold Shift to run |
-| `1` | Walk by default; press Shift to toggle running |
-| `2` | Run by default; hold Shift to walk |
-| `3` | Run by default; press Shift to toggle walking |
+For alternate keyboard controls, choose **Default pace: Walk / Run** and **Shift behavior: Hold / Toggle** in the Controls menu. Shift selects the opposite pace: hold it temporarily, or press it to toggle. These settings do not change the controller's walking/running behavior.
 
 Default INIs: [RE1](https://github.com/Fusion-Fix/ResidentEvilClassicTrilogy.FusionFix/blob/main/data/plugins/RE1Classic.FusionFix.ini) · [RE2](https://github.com/Fusion-Fix/ResidentEvilClassicTrilogy.FusionFix/blob/main/data/plugins/RE2Classic.FusionFix.ini) · [RE3](https://github.com/Fusion-Fix/ResidentEvilClassicTrilogy.FusionFix/blob/main/data/plugins/RE3Nemesis.FusionFix.ini).
 

@@ -103,8 +103,8 @@ Dort einen gespeicherten Spielstand laden.
 [Fill the screen with a moving camera view.]
 Das Bild mit einer beweglichen Kamera anpassen.
 
-[Menus retain their original proportions.]
-Menüs behalten ihre ursprünglichen Proportionen.
+[Right stick / mouse wheel: look up/down.]
+Rechter Stick / Mausrad: hoch/runter schauen.
 
 [Original: turn and move relative to the player.]
 Original: relativ zur Figur drehen und bewegen.
@@ -247,3 +247,46 @@ Zum Übernehmen das Spiel neu starten.
 
 [Choose where native settings are stored.]
 Speicherort der nativen Optionen wählen.
+
+
+[Mouse steering]
+Maussteuerung
+
+[Mouse sensitivity]
+Mausempfindlichkeit
+
+[Turn while standing, walking or running.]
+Drehen im Stand, beim Gehen oder Rennen.
+
+[While aiming, also aim up/down with the mouse.]
+Beim Zielen auch mit der Maus hoch/runter.
+
+[Adjust mouse turning and vertical aim response.]
+Mausreaktion beim Drehen und Zielen anpassen.
+
+[Only affects mouse steering.]
+Gilt nur für die Maussteuerung.
+
+[Default pace]
+Standardtempo
+
+[Shift behavior]
+Umschaltverhalten
+
+[Walk]
+Gehen
+
+[Run]
+Rennen
+
+[Hold]
+Halten
+
+[Toggle]
+Umschalten
+
+[Choose whether you normally walk or run.]
+Normalerweise gehen oder rennen.
+
+[Hold Shift, or press it to switch pace.]
+Umschalt halten oder zum Wechseln drücken.

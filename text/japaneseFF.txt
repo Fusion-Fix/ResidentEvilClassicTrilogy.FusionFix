@@ -103,8 +103,8 @@ Shiftキー
 [Fill the screen with a moving camera view.]
 カメラをうごかしてワイドがめんにあわせます。
 
-[Menus retain their original proportions.]
-メニューのたてよこひはもとのままです。
+[Right stick / mouse wheel: look up/down.]
+みぎスティック / ホイール: うえしたをみる
 
 [Original: turn and move relative to the player.]
 オリジナル：キャラクターきじゅんでいどうします。
@@ -247,3 +247,46 @@ Enter：けってい　Esc：もどる
 
 [Choose where native settings are stored.]
 せっていのほぞんばしょをえらぶ
+
+
+[Mouse steering]
+マウスそうさ
+
+[Mouse sensitivity]
+マウスかんど
+
+[Turn while standing, walking or running.]
+たつ ときも あるく はしる ときも むきをかえる
+
+[While aiming, also aim up/down with the mouse.]
+かまえた ときは マウスで うえしたも ねらう
+
+[Adjust mouse turning and vertical aim response.]
+マウスのむきとねらいのかんどをせってい
+
+[Only affects mouse steering.]
+マウスそうさのみにてきよう
+
+[Default pace]
+ふだんのいどう
+
+[Shift behavior]
+Shiftのそうさ
+
+[Walk]
+あるく
+
+[Run]
+はしる
+
+[Hold]
+おすあいだ
+
+[Toggle]
+きりかえ
+
+[Choose whether you normally walk or run.]
+ふだん あるくか はしるかを えらぶ
+
+[Hold Shift, or press it to switch pace.]
+Shiftをおすあいだ または おしてきりかえる

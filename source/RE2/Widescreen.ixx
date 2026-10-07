@@ -332,7 +332,7 @@ namespace RE2Presentation
         }
         else if (frameCrop)
             framePan = pan.Update(PlayerY(renderer), cameraKey, elapsed, ClassicInput::pad.right.y, viewport.SourceHeight());
-        else pan.camera = UINT32_MAX;
+        else { pan.camera = UINT32_MAX; MouseInput::WheelPan(false); }
         roomDrawn = false;
         // All three queues belong to one image. Clear and select its crop once,
         // before submitting the background, characters and interface queues.

@@ -1,4 +1,5 @@
 #pragma once
+#include "MouseInput.hxx"
 
 #include <algorithm>
 #include <cmath>
@@ -67,6 +68,9 @@ namespace Presentation
     {
         float position = 30.0f;
         float look = 0.0f;
+        float wheelLook = 0.0f;
+        float wheelPlayerY = 120.0f;
+        bool releaseWheel = false;
         uint32_t camera = UINT32_MAX;
 
         float Center(uint32_t nextCamera, float visibleHeight = 180.0f)
@@ -75,33 +79,61 @@ namespace Presentation
             // then ease out of it without revealing an unseen player offset.
             position = std::max(240.0f - visibleHeight, 0.0f) * 0.5f;
             look = 0.0f;
+            wheelLook = 0.0f;
+            releaseWheel = false;
+            MouseInput::WheelPan(false);
             camera = nextCamera;
             return position;
         }
 
         float Update(float playerY, uint32_t nextCamera, float seconds, float rightStickY = 0.0f, float visibleHeight = 180.0f)
         {
+            const float wheel = MouseInput::WheelPan(true);
+            const float elapsed = std::clamp(seconds, 0.0f, 0.1f);
             const float travelLimit = std::max(240.0f - visibleHeight, 0.0f);
             const float target = std::clamp(playerY - visibleHeight * 0.5f, 0.0f, travelLimit);
             if (camera != nextCamera)
             {
                 position = target;
                 look = 0.0f;
+                wheelLook = 0.0f;
+                releaseWheel = false;
             }
-            else
+            if (wheel != 0.0f)
+            {
+                wheelLook = std::clamp(wheelLook + wheel, -1.0f, 1.0f);
+                wheelPlayerY = playerY;
+                releaseWheel = false;
+            }
+            if (camera == nextCamera)
             {
                 // Let the player move inside a small safe band before scrolling.
                 const float difference = target - position;
                 const float travel = std::copysign(std::max(std::abs(difference) - 8.0f, 0.0f), difference);
-                position += travel * (1.0f - std::exp(-6.0f * std::clamp(seconds, 0.0f, 0.1f)));
+                // Remaining camera easing is not new player movement. Fresh
+                // scrolling suspends it immediately, until the player moves
+                // out of the wheel's own safe band and tracking resumes.
+                if (std::abs(playerY - wheelPlayerY) > 8.0f
+                    && std::abs(travel) > 0.1f && wheel == 0.0f) releaseWheel = true;
+                const bool holdWheel = std::abs(wheelLook) >= 0.001f && !releaseWheel
+                    && std::abs(rightStickY) <= 0.01f;
+                if (!holdWheel) position += travel * (1.0f - std::exp(-6.0f * elapsed));
             }
             camera = nextCamera;
             position = std::clamp(position, 0.0f, travelLimit);
             // Full tilt can reveal either edge of the original image, wherever
             // automatic tracking has placed the crop. Partial tilt stays subtle.
-            const float stick = std::clamp(rightStickY, -1.0f, 1.0f);
+            if (releaseWheel)
+            {
+                wheelLook *= std::exp(-3.0f * elapsed);
+                if (std::abs(wheelLook) < 0.001f) { wheelLook = 0.0f; releaseWheel = false; }
+            }
+            // Hold a wheel adjustment while stationary; automatic tracking
+            // smoothly takes over when the player moves beyond the safe band.
+            // A deliberate right-stick tilt takes priority over wheel adjustment.
+            const float stick = std::clamp(std::abs(rightStickY) > 0.01f ? rightStickY : wheelLook, -1.0f, 1.0f);
             const float targetLook = stick * (stick >= 0.0f ? position : travelLimit - position);
-            look += (targetLook - look) * (1.0f - std::exp(-5.0f * std::clamp(seconds, 0.0f, 0.1f)));
+            look += (targetLook - look) * (1.0f - std::exp(-5.0f * elapsed));
             return std::clamp(position - look, 0.0f, travelLimit);
         }
     };

@@ -188,7 +188,10 @@ namespace PanAndScan
             scene.pan = scene.crop ? pan.Update(game.PlayerY(), *game.room, elapsed, Input::GetPad().right.y,
                 SceneViewport(renderer).SourceHeight()) : 30.0f;
             if (!scene.crop)
+            {
                 pan.camera = UINT32_MAX;
+                MouseInput::WheelPan(false);
+            }
         }
 
         auto* queue = static_cast<uint8_t*>(renderer) + 64;

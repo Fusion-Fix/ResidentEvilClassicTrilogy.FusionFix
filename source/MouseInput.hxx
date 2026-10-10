@@ -21,6 +21,7 @@ namespace MouseInput
     inline std::atomic<uint64_t> resetGeneration = 0;
     struct Command { uint32_t held = 0, pressed = 0; unsigned turnSteps = 0; };
     inline HWND registeredWindow = nullptr;
+    inline std::atomic<uint32_t> buttons = 0;
     inline bool clipped = false;
     inline RECT previousClip{}, currentClip{};
     inline bool wheelActive = false;
@@ -81,11 +82,11 @@ namespace MouseInput
         const std::lock_guard lock(mutex);
         ClearLocked();
     }
-    inline void Message(HWND window, UINT message, LPARAM parameter, bool enabled, bool paused)
+    inline void Message(HWND window, UINT message, LPARAM parameter, bool enabled, bool paused, bool bindings = false)
     {
-        if (!enabled || paused || !Focused()) { Reset(); return; }
+        if ((!enabled && !bindings) || !Focused()) { buttons = 0; Reset(); return; }
         if (message == WM_DESTROY || message == WM_KILLFOCUS || message == WM_DISPLAYCHANGE)
-        { Reset(); if (message == WM_DESTROY && registeredWindow == window) registeredWindow = nullptr; return; }
+        { buttons = 0; Reset(); if (message == WM_DESTROY && registeredWindow == window) registeredWindow = nullptr; return; }
         // Foreground raw input keeps working at desktop cursor edges. Do not
         // disable legacy mouse messages, so aim/fire buttons stay native.
         if (registeredWindow != window && window)
@@ -101,7 +102,15 @@ namespace MouseInput
         std::vector<uint8_t> buffer(size);
         if (GetRawInputData(handle, RID_INPUT, buffer.data(), &size, sizeof(RAWINPUTHEADER)) == UINT(-1)) return;
         const auto& input = *reinterpret_cast<const RAWINPUT*>(buffer.data());
-        if (input.header.dwType != RIM_TYPEMOUSE || (input.data.mouse.usFlags & MOUSE_MOVE_ABSOLUTE)) return;
+        if (input.header.dwType != RIM_TYPEMOUSE) return;
+        // Exclusive DirectInput acquisition can hide buttons from
+        // GetAsyncKeyState. Raw input remains independent of that device.
+        const auto flags = input.data.mouse.usButtonFlags;
+        if (flags & RI_MOUSE_LEFT_BUTTON_DOWN) buttons.fetch_or(1);
+        if (flags & RI_MOUSE_LEFT_BUTTON_UP) buttons.fetch_and(~1u);
+        if (flags & RI_MOUSE_RIGHT_BUTTON_DOWN) buttons.fetch_or(2);
+        if (flags & RI_MOUSE_RIGHT_BUTTON_UP) buttons.fetch_and(~2u);
+        if (!enabled || paused || (input.data.mouse.usFlags & MOUSE_MOVE_ABSOLUTE)) return;
         const std::lock_guard lock(mutex);
         // Inputs received outside a permitted player update are discarded.
         if (!active) return;

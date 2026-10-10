@@ -165,7 +165,8 @@ export namespace ClassicMenu
         window = target;
         MouseInput::WheelMessage(message, key, ClassicGame::Enabled(ClassicGame::Option::PanAndScan)
             && !opened && !ClassicInput::InNativeMenu());
-        MouseInput::Message(target, message, flags, ClassicGame::GetSettings().mouseSteering, opened);
+        MouseInput::Message(target, message, flags, ClassicGame::GetSettings().mouseSteering, opened,
+            ClassicGame::GetSettings().hdControls);
         if (message == WM_KEYDOWN) menu.controller = false;
         if (message == WM_CLOSE || message == WM_DESTROY || message == WM_DISPLAYCHANGE)
         {

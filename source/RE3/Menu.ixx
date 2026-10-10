@@ -409,7 +409,8 @@ namespace GameMenu
         window = Read<HWND>(application, 40);
         MouseInput::WheelMessage(message, wparam, Game::Enabled(Game::Option::PanAndScan)
             && !Menu::opened && game.Controllable() && !(*game.flags & 0x10000));
-        MouseInput::Message(window, message, lparam, Game::GetSettings().mouseSteering, Menu::opened);
+        MouseInput::Message(window, message, lparam, Game::GetSettings().mouseSteering, Menu::opened,
+            Game::GetSettings().hdControls);
         if (message == WM_KEYDOWN) inputDevice = 0;
         if (message == WM_KILLFOCUS)
         {

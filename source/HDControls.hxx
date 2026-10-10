@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <Windows.h>
 #include <Xinput.h>
+#include "MouseInput.hxx"
 
 namespace HDControls
 {
@@ -50,8 +51,9 @@ namespace HDControls
         if (key('D') || key(VK_RIGHT)) result.direction |= 2;
         if (key('S') || key(VK_DOWN)) result.direction |= 4;
         if (key('A') || key(VK_LEFT)) result.direction |= 8;
-        result.aim = key(VK_RBUTTON) || (buttons & LT);
-        result.attack = key(VK_LBUTTON) || (buttons & RT);
+        const auto mouse = MouseInput::buttons.load();
+        result.aim = (mouse & 2) || key(VK_RBUTTON) || (buttons & LT);
+        result.attack = (mouse & 1) || key(VK_LBUTTON) || (buttons & RT);
         result.examine = key('F') || (buttons & A);
         result.run = key(VK_SHIFT) || (buttons & X);
         result.target = key('C') || (buttons & LB);

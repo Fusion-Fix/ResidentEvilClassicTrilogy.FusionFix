@@ -35,6 +35,8 @@ namespace RE2Presentation
     uint8_t* camera = nullptr;
     Presentation::Pan pan;
     bool roomDrawn = false;
+    SafetyHookInline shGallery;
+    bool galleryDrawn = false;
     bool frameCrop = false;
     float framePan = 30.0f;
     auto lastFrame = std::chrono::steady_clock::now();
@@ -208,6 +210,14 @@ namespace RE2Presentation
         return shBackground.unsafe_ccall<int>();
     }
 
+    void* __cdecl Gallery()
+    {
+        // The model gallery also submits room backgrounds. Mark the entire
+        // frame, including queues flushed after this task has returned, as UI.
+        galleryDrawn = true;
+        return shGallery.unsafe_ccall<void*>();
+    }
+
     int __fastcall State(void* renderer, void*, void* packet)
     {
         // The game's state packets restore a logical 320x240 scale during
@@ -309,7 +319,9 @@ namespace RE2Presentation
         const auto now = std::chrono::steady_clock::now();
         const float elapsed = std::chrono::duration<float>(now - lastFrame).count();
         lastFrame = now;
-        frameCrop = ClassicGame::Enabled(ClassicGame::Option::PanAndScan) && roomDrawn;
+        const bool gallery = galleryDrawn;
+        galleryDrawn = false;
+        frameCrop = ClassicGame::Enabled(ClassicGame::Option::PanAndScan) && roomDrawn && !gallery;
         const auto viewport = Presentation::Viewport::Scene(float(Read<uint16_t>(renderer, 24382)), float(Read<uint16_t>(renderer, 24384)),
             ClassicGame::GetSettings().maxAspectRatio);
         bool topBar = false, bottomBar = false;
@@ -325,7 +337,7 @@ namespace RE2Presentation
             }
         }
         const auto cameraKey = Read<uint32_t>(camera - 4) ^ (uint32_t(*camera) << 24);
-        if (ClassicGame::Enabled(ClassicGame::Option::PanAndScan) && topBar && bottomBar)
+        if (!gallery && ClassicGame::Enabled(ClassicGame::Option::PanAndScan) && topBar && bottomBar)
         {
             frameCrop = true;
             framePan = pan.Center(cameraKey, viewport.SourceHeight());
@@ -437,6 +449,8 @@ namespace RE2Presentation
         shState = safetyhook::create_inline(state.get_first(), State);
         shRender = safetyhook::create_inline(render.get_first(), Render);
         shFrame = safetyhook::create_inline(frame.get_first(), Frame);
+        auto gallery = hook::pattern("A1 ? ? ? ? 8B 0D ? ? ? ? 8B 15 ? ? ? ? A3 ? ? ? ? 33 C0 89 0D ? ? ? ? 8A 42 08 83 E8 00");
+        if (gallery.size() == 1) shGallery = safetyhook::create_inline(gallery.get_first(), Gallery);
         if (text.size() == 1 && textScale.size() == 1)
         {
             textRenderer = *text.get_first<void**>(21);

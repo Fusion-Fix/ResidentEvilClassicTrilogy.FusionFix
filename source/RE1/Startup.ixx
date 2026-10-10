@@ -10,20 +10,19 @@ import RE1Saves;
 namespace RE1Intro
 {
     SafetyHookInline shStartup, shTitle;
-    SafetyHookMid shOpeningMovie;
+    SafetyHookMid shOpeningMovie, shWarningSkip, shLogoSkip;
     uintptr_t openingMovieResume = 0;
     int32_t* openingMovieTimer = nullptr;
-    void(__cdecl* replace)(void*) = nullptr;
-    void* titleTask = nullptr;
+    uintptr_t warningResume = 0, logosResume = 0;
     uint8_t* title = nullptr;
     bool firstTitleFrame = true;
 
     int __cdecl Startup()
     {
         firstTitleFrame = true;
-        if (!ClassicGame::Enabled(ClassicGame::Option::SkipIntro)) return shStartup.unsafe_ccall<int>();
-        replace(titleTask);
-        return 0;
+        // Startup also resets engine state and registers resource cleanup.
+        // Keep that initialization; skip only its warning and logo sections.
+        return shStartup.unsafe_ccall<int>();
     }
 
     int __cdecl Title()
@@ -54,11 +53,34 @@ namespace RE1Intro
             japanese = true;
         }
         if (startup.size() != 1 || next.size() != 1 || menu.size() != 1 || state.size() != 1) return;
-        titleTask = *next.get_first<void*>(japanese ? 11 : 1);
-        replace = reinterpret_cast<decltype(replace)>(injector::GetBranchDestination(next.get_first(japanese ? 15 : 5)).as_int());
         title = *state.get_first<uint8_t*>(1);
+        logosResume = uintptr_t(next.get_first(japanese ? 10 : 0));
+        if (japanese)
+        {
+            shLogoSkip = safetyhook::create_mid(next.get_first(), [](SafetyHookContext& context)
+            {
+                if (ClassicGame::Enabled(ClassicGame::Option::SkipIntro)) context.eip = logosResume;
+            });
+        }
+        else
+        {
+            auto warning = hook::pattern("68 E0 01 00 00 68 80 02 00 00 E8 ? ? ? ? 83 C4 08 A1");
+            auto finishWarning = hook::pattern("C7 05 ? ? ? ? 00 00 00 00 68 F0 00 00 00 68 40 01 00 00 E8 ? ? ? ? 83 C4 08 68 80 00 00 00 68 80 00 00 00 68 80 00 00 00 E8 ? ? ? ? 83 C4 0C");
+            if (warning.size() == 1 && finishWarning.size() == 1)
+            {
+                warningResume = uintptr_t(finishWarning.get_first());
+                shWarningSkip = safetyhook::create_mid(warning.get_first(18), [](SafetyHookContext& context)
+                {
+                    if (ClassicGame::Enabled(ClassicGame::Option::SkipIntro)) context.eip = warningResume;
+                });
+                shLogoSkip = safetyhook::create_mid(finishWarning.get_first(51), [](SafetyHookContext& context)
+                {
+                    if (ClassicGame::Enabled(ClassicGame::Option::SkipIntro)) context.eip = logosResume;
+                });
+            }
+        }
         // The title task queues OU.avi before its first menu frame. Bypass
-        // that request too; replacing the startup task only skips the logos.
+        // that request too, without changing any later story movie requests.
         auto openingMovie = hook::pattern("39 1D ? ? ? ? 7F ? A1 ? ? ? ? 6A 01 88 1D ? ? ? ? A3 ? ? ? ? C7 05 ? ? ? ? 10 00 00 00 81 0D ? ? ? ? 00 00 04 00 E8 ? ? ? ? 83 C4 04");
         if (openingMovie.size() == 1)
         {

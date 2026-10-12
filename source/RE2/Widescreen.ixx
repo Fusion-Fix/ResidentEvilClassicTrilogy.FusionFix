@@ -20,7 +20,7 @@ namespace RE2Presentation
 {
     using ClassicMemory::Read;
     using ClassicMemory::Write;
-    SafetyHookInline shMode, shRender, shPacket, shDraw, shBackground, shBlit, shState, shFrame, shPresent, shMovie, shMovieClose;
+    SafetyHookInline shMode, shRender, shPacket, shDraw, shBackground, shBlit, shLine, shState, shFrame, shPresent, shMovie, shMovieClose;
     void* liveMovie = nullptr;
     HWND liveMovieWindow = nullptr;
     IUnknown* pausedMovie = nullptr;
@@ -183,7 +183,9 @@ namespace RE2Presentation
             for (size_t column = 0; column < 3; ++column)
                 projected[row] += Read<int16_t>(view, (row * 3 + column) * 2) * point[column] / 4096.0;
         }
-        return projected[2] > 1.0 ? float(120.0 + projected[1] * Read<int>(renderer, 23232) / projected[2]) : 120.0f;
+        return projected[2] > 1.0 ? float((Read<int>(renderer, 23212)
+            + projected[1] * Read<int>(renderer, 23232) / projected[2])
+            * Read<float>(renderer, 23228) * 240.0 / Read<uint16_t>(renderer, 24384)) : 120.0f;
     }
 
     int __fastcall Mode(void* renderer, void*)
@@ -245,16 +247,14 @@ namespace RE2Presentation
 
     int __fastcall State(void* renderer, void*, void* packet)
     {
-        // Preserve each packet's scale: menus use 1 for 640x480 assets,
-        // whereas world geometry uses the native 320x240 projection.
+        // Preserve each packet's scale and projection as a pair. Native packets
+        // can use either 320-pixel coordinates at scale 2 or 640 at scale 1.
         uint32_t copy[13];
         memcpy(copy, packet, sizeof(copy));
         if (context.renderer && (copy[1] & 0x2000))
         {
-            const float x = frameUI ? Read<float>(packet, 28) * context.width / nativeWidth
-                : context.width / Read<int>(renderer, 23184);
-            const float y = frameUI ? Read<float>(packet, 32) * context.height / nativeHeight
-                : context.height / Read<int>(renderer, 23188);
+            const float x = Read<float>(packet, 28) * context.width / nativeWidth;
+            const float y = Read<float>(packet, 32) * context.height / nativeHeight;
             memcpy(copy + 7, &x, sizeof(x));
             memcpy(copy + 8, &y, sizeof(y));
         }
@@ -345,6 +345,31 @@ namespace RE2Presentation
             sourceLeft, sourceTop, sourceRight, sourceBottom, clipLeft, clipTop, clipRight, clipBottom, color, flags);
     }
 
+    int __cdecl Line(void* destination, int x1, int y1, int x2, int y2,
+        int clipLeft, int clipTop, int clipRight, int clipBottom, int color1, int color2, unsigned flags)
+    {
+        if (context.renderer && destination == static_cast<uint8_t*>(context.renderer) + 24356)
+        {
+            // Heartbeat packets bypass the sprite renderer. The native rasterizer
+            // doubles their coordinates for 640x480, but never applies render scales.
+            const auto transform = Transform();
+            const float factor = (flags & 1) ? 2.0f : 1.0f;
+            const float scaleX = factor * context.width / nativeWidth * transform.scaleX;
+            const float scaleY = factor * context.height / nativeHeight * transform.scaleY;
+            x1 = int(std::lround(x1 * scaleX + transform.offsetX));
+            x2 = int(std::lround(x2 * scaleX + transform.offsetX));
+            y1 = int(std::lround(y1 * scaleY + transform.offsetY));
+            y2 = int(std::lround(y2 * scaleY + transform.offsetY));
+            clipLeft = 0;
+            clipTop = 0;
+            clipRight = int(context.width);
+            clipBottom = int(context.height);
+            flags &= ~1u;
+        }
+        return shLine.unsafe_ccall<int>(destination, x1, y1, x2, y2,
+            clipLeft, clipTop, clipRight, clipBottom, color1, color2, flags);
+    }
+
     int __fastcall Frame(void* renderer, void*)
     {
         auto* draw = Read<IDirectDraw*>(renderer, 24328);
@@ -396,8 +421,8 @@ namespace RE2Presentation
         context.pan = framePan;
         context.width = float(Read<uint16_t>(renderer, 24382));
         context.height = float(Read<uint16_t>(renderer, 24384));
-        Write(renderer, 23224, context.width / (frameUI ? nativeWidth : Read<int>(renderer, 23184)));
-        Write(renderer, 23228, context.height / (frameUI ? nativeHeight : Read<int>(renderer, 23188)));
+        Write(renderer, 23224, context.width / nativeWidth);
+        Write(renderer, 23228, context.height / nativeHeight);
         const auto result = shFrame.unsafe_thiscall<int>(renderer);
         context = previous;
         ClassicMenu::Draw(draw, surface);
@@ -462,6 +487,7 @@ namespace RE2Presentation
         auto packet = hook::pattern("81 EC C8 00 00 00 53 55 56 57 8B BC 24 DC 00 00 00 8D 44 24 58 89 44 24 30");
         auto background = hook::pattern("A1 ? ? ? ? 83 EC 08 83 F8 01 53 55 56 57 0F 84 ? ? ? ? 6A 78 68 A0 00 00 00");
         auto blit = hook::pattern("8B 44 24 04 83 EC 10 8A 48 26 53 55 56 84 C9 57 0F 84 ? ? ? ? 8B 4C 24 28");
+        auto line = hook::pattern("83 EC 44 56 8B 74 24 4C 8A 46 26 84 C0 75 14 68 ? ? ? ? E8 ? ? ? ? 83 C4 04 33 C0 5E 83 C4 44 C3 8B 44 24 70");
         auto actor = hook::pattern("A1 ? ? ? ? 83 C7 04 3B B8 4C 21 00 00 75 ? 8D B0 10 3A 00 00");
         auto matrix = hook::pattern("BF ? ? ? ? F3 A5 8B 4C 24 4C 8B 70 04 8B 18 8B 69 04");
         auto font = hook::pattern("8B 44 24 08 8B 0D ? ? ? ? 53 56 83 F8 29 57 8B F1 72 06 33 C0 5F 5E 5B C3 8D 3C 40 C1 E7 02 8B 87 ? ? ? ?");
@@ -478,7 +504,7 @@ namespace RE2Presentation
         auto text = hook::pattern("A1 ? ? ? ? 83 EC 30 85 C0 53 55 56 57 0F 84 ? ? ? ? A1 ? ? ? ? 8D 54 24 10 52 8B 80 50 5F 00 00 50 8B 08 FF 51 44");
         auto textScale = hook::pattern("A0 ? ? ? ? 8B 4C 24 28 84 C0 74 ? 81 F9 40 02 00 00");
         if (mode.size() != 1 || render.size() != 1 || packet.size() != 1 || background.size() != 1
-            || blit.size() != 1 || actor.size() != 1 || matrix.size() != 1 || font.size() != 1
+            || blit.size() != 1 || line.size() != 1 || actor.size() != 1 || matrix.size() != 1 || font.size() != 1
             || state.size() != 1 || frame.size() != 1 || present.size() != 1) return;
         const auto display = Presentation::OutputDisplaySize();
         if (!display.width || !display.height) return;
@@ -491,6 +517,7 @@ namespace RE2Presentation
         shPacket = safetyhook::create_inline(packet.get_first(), Packet);
         shBackground = safetyhook::create_inline(background.get_first(), Background);
         shBlit = safetyhook::create_inline(blit.get_first(), Blit);
+        shLine = safetyhook::create_inline(line.get_first(), Line);
         shState = safetyhook::create_inline(state.get_first(), State);
         shRender = safetyhook::create_inline(render.get_first(), Render);
         shFrame = safetyhook::create_inline(frame.get_first(), Frame);

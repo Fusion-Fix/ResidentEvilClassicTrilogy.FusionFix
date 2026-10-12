@@ -20,7 +20,7 @@ namespace RE2Presentation
 {
     using ClassicMemory::Read;
     using ClassicMemory::Write;
-    SafetyHookInline shMode, shRender, shPacket, shDraw, shBackground, shBlit, shLine, shState, shFrame, shPresent, shMovie, shMovieClose;
+    SafetyHookInline shMode, shRender, shPacket, shDraw, shBackground, shBlit, shLine, shState, shFrame, shMovie, shMovieClose;
     void* liveMovie = nullptr;
     HWND liveMovieWindow = nullptr;
     IUnknown* pausedMovie = nullptr;
@@ -30,6 +30,8 @@ namespace RE2Presentation
     bool streamedMovie = false;
     int outputWidth = 0, outputHeight = 0;
     int nativeWidth = 640, nativeHeight = 480;
+    int frameCanvasWidth = 640, frameCanvasHeight = 480;
+    void* presentationRenderer = nullptr;
     void** game = nullptr;
     void* view = nullptr;
     uint32_t* fonts = nullptr;
@@ -40,6 +42,7 @@ namespace RE2Presentation
     bool galleryDrawn = false;
     bool frameCrop = false;
     bool frameUI = false;
+    bool frameGallery = false;
     float framePan = 30.0f;
     auto lastFrame = std::chrono::steady_clock::now();
 
@@ -183,13 +186,12 @@ namespace RE2Presentation
             for (size_t column = 0; column < 3; ++column)
                 projected[row] += Read<int16_t>(view, (row * 3 + column) * 2) * point[column] / 4096.0;
         }
-        return projected[2] > 1.0 ? float((Read<int>(renderer, 23212)
-            + projected[1] * Read<int>(renderer, 23232) / projected[2])
-            * Read<float>(renderer, 23228) * 240.0 / Read<uint16_t>(renderer, 24384)) : 120.0f;
+        return projected[2] > 1.0 ? float(120.0 + projected[1] * Read<int>(renderer, 23232) / projected[2]) : 120.0f;
     }
 
     int __fastcall Mode(void* renderer, void*)
     {
+        presentationRenderer = renderer;
         // Use the desktop for the native primary/back surfaces. Presentation
         // then fits or crops the same image without changing display modes.
         if (!(Read<uint32_t>(renderer, 24524) & 0x2000))
@@ -208,26 +210,11 @@ namespace RE2Presentation
         const auto result = shMode.unsafe_thiscall<int>(renderer);
         if (result)
         {
-            // Native menus select 320 or 640 pixel assets and projection centres
-            // from these fields. Desktop dimensions are not a third asset size.
+            // The gallery supplies separate 320/640 assets. Output dimensions
+            // remain physical; the inventory itself is always authored at 320.
             nativeWidth = Read<uint16_t>(renderer, 24382) >= 640 ? 640 : 320;
             nativeHeight = nativeWidth * 3 / 4;
-            Write(renderer, 24336, nativeWidth);
-            Write(renderer, 24340, nativeHeight);
         }
-        return result;
-    }
-
-    int __fastcall Present(void* renderer, void*)
-    {
-        // Windowed presentation needs the actual surface rectangle, while asset
-        // selection between frames must continue to see the native canvas.
-        const int width = Read<int>(renderer, 24336), height = Read<int>(renderer, 24340);
-        Write(renderer, 24336, int(Read<uint16_t>(renderer, 24382)));
-        Write(renderer, 24340, int(Read<uint16_t>(renderer, 24384)));
-        const auto result = shPresent.unsafe_thiscall<int>(renderer);
-        Write(renderer, 24336, width);
-        Write(renderer, 24340, height);
         return result;
     }
 
@@ -239,33 +226,38 @@ namespace RE2Presentation
 
     void* __cdecl Gallery()
     {
-        // The model gallery also submits room backgrounds. Mark the entire
-        // frame, including queues flushed after this task has returned, as UI.
         galleryDrawn = true;
-        return shGallery.unsafe_ccall<void*>();
+        // Gallery asset selection and model projection must agree on 320/640.
+        // Apply the native canvas only while building gallery packets; leave
+        // gameplay and the physical output dimensions untouched.
+        auto* renderer = presentationRenderer;
+        if (!renderer) return shGallery.unsafe_ccall<void*>();
+        const int width = Read<int>(renderer, 24336), height = Read<int>(renderer, 24340);
+        Write(renderer, 24336, nativeWidth);
+        Write(renderer, 24340, nativeHeight);
+        const auto result = shGallery.unsafe_ccall<void*>();
+        Write(renderer, 24336, width);
+        Write(renderer, 24340, height);
+        return result;
     }
 
     int __fastcall State(void* renderer, void*, void* packet)
     {
-        // Preserve each packet's scale and projection as a pair. Native packets
-        // can use either 320-pixel coordinates at scale 2 or 640 at scale 1.
+        // Inventory sprites and heartbeat coordinates share a 320x240 canvas.
+        // Its native 1x/2x output scale is replaced by the physical surface scale.
+        // Gallery packets instead use the canvas selected while building them.
         uint32_t copy[13];
         memcpy(copy, packet, sizeof(copy));
         if (context.renderer && (copy[1] & 0x2000))
         {
-            const float x = Read<float>(packet, 28) * context.width / nativeWidth;
-            const float y = Read<float>(packet, 32) * context.height / nativeHeight;
+            const float x = frameGallery ? Read<float>(packet, 28) * context.width / frameCanvasWidth
+                : context.width / Read<int>(renderer, 23184);
+            const float y = frameGallery ? Read<float>(packet, 32) * context.height / frameCanvasHeight
+                : context.height / Read<int>(renderer, 23188);
             memcpy(copy + 7, &x, sizeof(x));
             memcpy(copy + 8, &y, sizeof(y));
         }
-        const auto result = shState.unsafe_thiscall<int>(renderer, copy);
-        if (context.renderer && (copy[1] & 0x4000))
-        {
-            // These are logical asset dimensions, not sizes of the backbuffer.
-            Write(renderer, 24336, nativeWidth);
-            Write(renderer, 24340, nativeHeight);
-        }
-        return result;
+        return shState.unsafe_thiscall<int>(renderer, copy);
     }
 
     HRESULT WINAPI Draw(IDirect3DDevice2* device, D3DPRIMITIVETYPE primitive, D3DVERTEXTYPE type,
@@ -340,6 +332,15 @@ namespace RE2Presentation
             right = int(std::lround(right * transform.scaleX + transform.offsetX));
             top = int(std::lround(top * transform.scaleY + transform.offsetY));
             bottom = int(std::lround(bottom * transform.scaleY + transform.offsetY));
+            if (context.ui || context.movie)
+            {
+                // Destination and clipping bounds must use the same presentation
+                // coordinates, otherwise fitted/cropped sprites are clipped early.
+                clipLeft = std::clamp(int(std::floor(clipLeft * transform.scaleX + transform.offsetX)), 0, int(context.width));
+                clipRight = std::clamp(int(std::ceil(clipRight * transform.scaleX + transform.offsetX)), 0, int(context.width));
+                clipTop = std::clamp(int(std::floor(clipTop * transform.scaleY + transform.offsetY)), 0, int(context.height));
+                clipBottom = std::clamp(int(std::ceil(clipBottom * transform.scaleY + transform.offsetY)), 0, int(context.height));
+            }
         }
         return shBlit.unsafe_ccall<int>(destination, source, left, top, right, bottom,
             sourceLeft, sourceTop, sourceRight, sourceBottom, clipLeft, clipTop, clipRight, clipBottom, color, flags);
@@ -353,9 +354,10 @@ namespace RE2Presentation
             // Heartbeat packets bypass the sprite renderer. The native rasterizer
             // doubles their coordinates for 640x480, but never applies render scales.
             const auto transform = Transform();
-            const float factor = (flags & 1) ? 2.0f : 1.0f;
-            const float scaleX = factor * context.width / nativeWidth * transform.scaleX;
-            const float scaleY = factor * context.height / nativeHeight * transform.scaleY;
+            // Line packets are always authored in 320x240; flag 1 is merely
+            // the native rasterizer's fixed 2x output mode, not an asset scale.
+            const float scaleX = context.width / 320.0f * transform.scaleX;
+            const float scaleY = context.height / 240.0f * transform.scaleY;
             x1 = int(std::lround(x1 * scaleX + transform.offsetX));
             x2 = int(std::lround(x2 * scaleX + transform.offsetX));
             y1 = int(std::lround(y1 * scaleY + transform.offsetY));
@@ -380,7 +382,13 @@ namespace RE2Presentation
         lastFrame = now;
         const bool gallery = galleryDrawn;
         galleryDrawn = false;
-        frameUI = gallery || (ClassicInput::nativeMenu && ClassicInput::nativeMenu());
+        // The menu flag is set before the room fades out and can remain set
+        // while it fades back in. Keep room frames in their gameplay framing;
+        // switch to the UI canvas only after room submission has stopped.
+        frameUI = gallery || (!roomDrawn && ClassicInput::nativeMenu && ClassicInput::nativeMenu());
+        frameGallery = gallery;
+        frameCanvasWidth = gallery ? nativeWidth : Read<int>(renderer, 23184);
+        frameCanvasHeight = gallery ? nativeHeight : Read<int>(renderer, 23188);
         frameCrop = ClassicGame::Enabled(ClassicGame::Option::PanAndScan) && roomDrawn && !frameUI;
         const auto viewport = Presentation::Viewport::Scene(float(Read<uint16_t>(renderer, 24382)), float(Read<uint16_t>(renderer, 24384)),
             ClassicGame::GetSettings().maxAspectRatio);
@@ -414,15 +422,17 @@ namespace RE2Presentation
             fill.dwSize = sizeof(fill);
             surface->Blt(nullptr, nullptr, nullptr, DDBLT_COLORFILL | DDBLT_WAIT, &fill);
         }
-        // State and model packets can be dispatched directly by the frame
-        // routine, outside Render(). Give those the same presentation context.
+        // Only UI needs a context around direct software dispatch. Gameplay
+        // retains its original queue-scoped rendering path, including masks.
         const auto previous = context;
-        context = { renderer, frameCrop, frameUI };
-        context.pan = framePan;
-        context.width = float(Read<uint16_t>(renderer, 24382));
-        context.height = float(Read<uint16_t>(renderer, 24384));
-        Write(renderer, 23224, context.width / nativeWidth);
-        Write(renderer, 23228, context.height / nativeHeight);
+        if (frameUI)
+        {
+            context = { renderer, false, true };
+            context.width = float(Read<uint16_t>(renderer, 24382));
+            context.height = float(Read<uint16_t>(renderer, 24384));
+            Write(renderer, 23224, context.width / frameCanvasWidth);
+            Write(renderer, 23228, context.height / frameCanvasHeight);
+        }
         const auto result = shFrame.unsafe_thiscall<int>(renderer);
         context = previous;
         ClassicMenu::Draw(draw, surface);
@@ -436,7 +446,13 @@ namespace RE2Presentation
         context.pan = framePan;
         context.width = float(Read<uint16_t>(renderer, 24382));
         context.height = float(Read<uint16_t>(renderer, 24384));
-        // Scales set by preceding state packets carry over between queues.
+        // Gameplay queues begin in the native 320x240 projection. UI queues
+        // instead retain the scales selected by their preceding state packets.
+        if (!frameUI)
+        {
+            Write(renderer, 23224, context.width / Read<int>(renderer, 23184));
+            Write(renderer, 23228, context.height / Read<int>(renderer, 23188));
+        }
         auto* device = Read<IDirect3DDevice2*>(renderer, 23172);
         if (device && !shDraw)
             shDraw = safetyhook::create_inline((*reinterpret_cast<void***>(device))[29], Draw);
@@ -495,7 +511,6 @@ namespace RE2Presentation
             font = hook::pattern("8B 44 24 08 8B 0D ? ? ? ? 53 56 83 F8 28 57 8B F1 72 06 33 C0 5F 5E 5B C3 8D 3C 40 C1 E7 02 8B 87 ? ? ? ?");
         auto state = hook::pattern("83 EC 58 56 57 8B 7C 24 64 8B F1 8B 47 04 F6 C4 20 74 12 8B 47 1C 89 86 B8 5A 00 00");
         auto frame = hook::pattern("56 8B F1 8B 86 C4 5A 00 00 85 C0 0F 85 ? ? ? ? 8B 86 CC 5F 00 00 F6 C4 02 0F 84");
-        auto present = hook::pattern("83 EC 10 56 8B F1 8B 86 C4 5A 00 00 85 C0 0F 85 ? ? ? ? 8B 86 0C 5F 00 00 F6 80 94 00 00 00 02");
         auto movie = hook::pattern("81 EC 24 04 00 00 53 55 56 57 8B F1 E8 ? ? ? ? 8B 9C 24 38 04 00 00 8B 2D");
         // The German game wrapper replaces the first native call with a jump.
         if (movie.size() != 1)
@@ -505,7 +520,7 @@ namespace RE2Presentation
         auto textScale = hook::pattern("A0 ? ? ? ? 8B 4C 24 28 84 C0 74 ? 81 F9 40 02 00 00");
         if (mode.size() != 1 || render.size() != 1 || packet.size() != 1 || background.size() != 1
             || blit.size() != 1 || line.size() != 1 || actor.size() != 1 || matrix.size() != 1 || font.size() != 1
-            || state.size() != 1 || frame.size() != 1 || present.size() != 1) return;
+            || state.size() != 1 || frame.size() != 1) return;
         const auto display = Presentation::OutputDisplaySize();
         if (!display.width || !display.height) return;
         outputWidth = display.width; outputHeight = display.height;
@@ -521,7 +536,6 @@ namespace RE2Presentation
         shState = safetyhook::create_inline(state.get_first(), State);
         shRender = safetyhook::create_inline(render.get_first(), Render);
         shFrame = safetyhook::create_inline(frame.get_first(), Frame);
-        shPresent = safetyhook::create_inline(present.get_first(), Present);
         auto gallery = hook::pattern("A1 ? ? ? ? 8B 0D ? ? ? ? 8B 15 ? ? ? ? A3 ? ? ? ? 33 C0 89 0D ? ? ? ? 8A 42 08 83 E8 00");
         if (gallery.size() == 1) shGallery = safetyhook::create_inline(gallery.get_first(), Gallery);
         if (text.size() == 1 && textScale.size() == 1)

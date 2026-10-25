@@ -290,3 +290,42 @@ Elige caminar o correr normalmente.
 
 [Hold Shift, or press it to switch pace.]
 Mantén Mayús o púlsalo para cambiar el paso.
+
+[Preset]
+Preajuste
+
+[Vanilla]
+Original
+
+[Recommended]
+Recomendado
+
+[Enhanced]
+Mejorado
+
+[Custom]
+Propio
+
+[Choose a preset with Left/Right; it applies at once.]
+Izquierda/Derecha: elige, se aplica al instante.
+
+[Vanilla: fixes only. Enhanced: everything on.]
+Original: solo correcciones. Mejorado: todo activado.
+
+[Plugins]
+Plugins
+
+[Change the settings of other loaded plugins.]
+Ajustar las opciones de otros plugins cargados.
+
+[Change the settings of this plugin.]
+Ajustar las opciones de este plugin.
+
+[Restore defaults]
+Restablecer
+
+[Reset the settings on this page to their defaults.]
+Restablecer los valores de esta página.
+
+[Return to the previous page.]
+Volver a la página anterior.

@@ -1,4 +1,5 @@
 #include <common.hxx>
+#include "../Overlay.hpp"
 
 import common;
 import Rendering;
@@ -12,6 +13,7 @@ import Saves;
 
 void Init()
 {
+    FixOverlay::Init();
     FusionFix::onInitEvent().executeAll();
 }
 

@@ -1,0 +1,16 @@
+// ASI Settings: the description of the plugin's settings and one translation per BCP 47 language tag,
+// read by the in-game menu, the overlay and FusionFixHub
+#if defined(FUSIONFIX_RE1)
+SETTINGS ASISETTINGS "settings/RE1Classic.FusionFix.json"
+#elif defined(FUSIONFIX_RE2)
+SETTINGS ASISETTINGS "settings/RE2Classic.FusionFix.json"
+#elif defined(FUSIONFIX_RE3)
+SETTINGS ASISETTINGS "settings/RE3Nemesis.FusionFix.json"
+#endif
+
+en ASISETTINGS_TEXT "settings/text/en.json"
+fr ASISETTINGS_TEXT "settings/text/fr.json"
+de ASISETTINGS_TEXT "settings/text/de.json"
+it ASISETTINGS_TEXT "settings/text/it.json"
+es ASISETTINGS_TEXT "settings/text/es.json"
+ja ASISETTINGS_TEXT "settings/text/ja.json"

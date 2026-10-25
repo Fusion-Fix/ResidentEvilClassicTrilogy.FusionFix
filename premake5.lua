@@ -62,6 +62,10 @@ workspace (game.project)
    staticruntime "On"
    multiprocessorcompile ("On")
    startproject (game.project)
+   -- BuildTimeUtc (Versioninfo.rc): the build's own time in UTC, written before every build
+   includedirs { "build/generated" }
+   resincludedirs { "build/generated" }
+   prebuildcommands { 'powershell -NoProfile -ExecutionPolicy Bypass -File "../tools/buildtime.ps1" -Out "../build/generated/BuildTime.h"' }
 
    local major = os.date("%d")
    local minor = os.date("%m")
@@ -125,15 +129,34 @@ project (game.project)
    defines { "rsc_GitSHA1W=L\"" .. githash .. "\"" }
    defines { "_CRT_SECURE_NO_WARNINGS" }
 
+   defines { "FUSIONFIX_" .. game.id }
+
    includedirs { "source" }
-   includedirs { "source/includes" }
-   files { "source/*.hxx", "source/*.ixx", "source/includes/**.h", "source/includes/**.hpp" }
+   -- Shared headers, ASI Settings and the overlay: FusionFixUtils, a submodule (change them there)
+   includedirs { "external/FusionFixUtils/include", "external/FusionFixUtils" }
+   files { "source/*.hxx", "source/*.ixx", "source/*.hpp", "source/*.cpp", "external/FusionFixUtils/include/callbacks.h", "external/FusionFixUtils/include/gameref.hpp", "external/FusionFixUtils/include/ModuleList.hpp" }
+   -- The settings overlay of FusionFixUtils; ImGui is the imgui submodule of FusionFixUtils
+   includedirs { "external/FusionFixUtils/imgui" }
+   files { "external/FusionFixUtils/overlay/*.hpp", "external/FusionFixUtils/imgui/*.h" }
+   files { "external/FusionFixUtils/imgui/imgui.cpp", "external/FusionFixUtils/imgui/imgui_draw.cpp", "external/FusionFixUtils/imgui/imgui_tables.cpp", "external/FusionFixUtils/imgui/imgui_widgets.cpp" }
+   files { "external/FusionFixUtils/imgui/backends/imgui_impl_win32.cpp", "external/FusionFixUtils/imgui/backends/imgui_impl_dx9.cpp" }
    files { "source/" .. game.id .. "/**.cpp", "source/" .. game.id .. "/**.ixx", "source/" .. game.id .. "/**.hxx" }
    includedirs { "source/" .. game.id }
    files { "source/resources/Versioninfo.rc" }
    files { "source/resources/MenuText.rc", "source/resources/MenuText.h" }
+   -- ASI Settings: the description of the plugin's settings and their translations
+   files { "source/resources/Settings.rc", "settings/" .. game.project .. ".json", "settings/text/*.json" }
    resincludedirs { _SCRIPT_DIR }
-   files { "data/plugins/" .. game.project .. ".ini", "data/settings/**.ini", "text/**.txt" }
+   files { "data/settings/**.ini", "text/**.txt" }
+
+   -- A broken settings description fails the build, before compiling and in the built plugin
+   dependson { "AsiSettingsValidator" .. game.id }
+   local texts = ""
+   for _, tag in ipairs({ "en", "fr", "de", "it", "es", "ja" }) do
+      texts = texts .. ' "../settings/text/' .. tag .. '.json"'
+   end
+   prebuildcommands { '"../bin/tools/asi-settings-validate.exe" "../settings/' .. game.project .. '.json"' .. texts }
+   postbuildcommands { '"../bin/tools/asi-settings-validate.exe" "$(TargetPath)"' }
 
    -- injector
    includedirs { "external/injector/include" }
@@ -171,4 +194,13 @@ project (game.project)
          end
    end
    filter {}
+
+-- Checks the ASI Settings descriptions (settings/*.json, external/FusionFixUtils/asi_settings)
+project ("AsiSettingsValidator" .. game.id)
+   kind "ConsoleApp"
+   language "C++"
+   targetdir "bin/tools"
+   targetname "asi-settings-validate"
+   targetextension ".exe"
+   files { "external/FusionFixUtils/asi_settings/tools/validator.cpp" }
 end

@@ -290,3 +290,42 @@ Shiftのそうさ
 
 [Hold Shift, or press it to switch pace.]
 Shiftをおすあいだ または おしてきりかえる
+
+[Preset]
+プリセット
+
+[Vanilla]
+オリジナル
+
+[Recommended]
+おすすめ
+
+[Enhanced]
+きょうか
+
+[Custom]
+カスタム
+
+[Choose a preset with Left/Right; it applies at once.]
+ひだりみぎでえらぶと すぐてきようします。
+
+[Vanilla: fixes only. Enhanced: everything on.]
+オリジナル：しゅうせいのみ。きょうか：すべてオン。
+
+[Plugins]
+プラグイン
+
+[Change the settings of other loaded plugins.]
+ほかのプラグインのせっていをへんこうします。
+
+[Change the settings of this plugin.]
+このプラグインのせっていをへんこうします。
+
+[Restore defaults]
+しょきせっていにもどす
+
+[Reset the settings on this page to their defaults.]
+このページのせっていをしょきちにもどします。
+
+[Return to the previous page.]
+まえのページにもどります。

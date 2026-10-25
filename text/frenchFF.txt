@@ -293,3 +293,42 @@ Choisir de marcher ou courir par défaut.
 
 [Hold Shift, or press it to switch pace.]
 Maintenir Maj ou appuyer pour changer d’allure.
+
+[Preset]
+Préréglage
+
+[Vanilla]
+Origine
+
+[Recommended]
+Recommandé
+
+[Enhanced]
+Amélioré
+
+[Custom]
+Perso
+
+[Choose a preset with Left/Right; it applies at once.]
+Gauche/Droite : choisir, appliqué aussitôt.
+
+[Vanilla: fixes only. Enhanced: everything on.]
+Origine : correctifs seuls. Amélioré : tout activé.
+
+[Plugins]
+Plugins
+
+[Change the settings of other loaded plugins.]
+Régler les options des autres plugins chargés.
+
+[Change the settings of this plugin.]
+Régler les options de ce plugin.
+
+[Restore defaults]
+Par défaut
+
+[Reset the settings on this page to their defaults.]
+Rétablir les valeurs par défaut de cette page.
+
+[Return to the previous page.]
+Revenir à la page précédente.

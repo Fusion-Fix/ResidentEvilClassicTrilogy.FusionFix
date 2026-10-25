@@ -25,9 +25,9 @@ Improvements for the original **Resident Evil**, **Resident Evil 2**, and **Resi
    - **Steam:** use **Manage → Browse local files**. Extract into the root containing the language folders, such as `english`. Steam can redirect a copied executable to the installed game, so use the folder Steam opens.
    - **GOG:** extract beside `ResidentEvil.exe`, `LeonU.exe` / `ClaireU.exe`, or `ResidentEvil3.exe`.
 3. Launch the game normally. Press **Esc** or controller **Start** to open Fusion Fix.
-4. Enable **Widescreen** and **Alternate controls** in the menu if you want them; both are off by default.
+4. Widescreen, alternate controls and mouse steering are on by default; the **Vanilla** preset restores the original 4:3 presentation and tank controls.
 
-The loader is included. Plugins and their INIs live in `plugins/` beside the executable; Steam archives place them inside each language folder. RE2's Leon and Claire share one plugin. Keep a copy of your INI when updating if you want to retain your settings.
+The loader and FusionFixHub are included. The plugin lives in `plugins/` beside the executable and writes its settings file (`RE1Classic.FusionFix.cfg`, `RE2Classic.FusionFix.cfg` or `RE3Nemesis.FusionFix.cfg`) there on the first start; Steam archives place them inside each language folder. RE2's Leon and Claire share one plugin. Updates keep the settings file. Settings files of older versions (`.ini`) are no longer read: choose those settings again in the menu.
 
 ## Features
 
@@ -55,7 +55,7 @@ The D-pad retains tank controls. Aiming, interactions, and scripted movement ret
 
 ### Remaster-style button layout
 
-The default keyboard and XInput layout follows **Resident Evil HD Remaster Type A**, with the same buttons in tank and Alternate movement modes. Choose **Controls → Bindings → Original** (or set `HDControls = 0` in the plugin INI) to restore native bindings. Legacy controllers retain their native button mappings.
+The default keyboard and XInput layout follows **Resident Evil HD Remaster Type A**, with the same buttons in tank and Alternate movement modes. Choose **Controls → Bindings → Original** (or set `HDControls = 0` in the plugin's settings file) to restore native bindings. Legacy controllers retain their native button mappings.
 
 | Action | Keyboard / mouse | Controller |
 |:--|:--|:--|
@@ -84,7 +84,7 @@ The **RE3-only wobble fix** preserves subpixel model coordinates to reduce visib
 
 **Optional mouse steering:** enable **Controls → Mouse steering** to turn with relative mouse movement while standing, walking, or running. While aiming, move the mouse up/down to select the native high, level, or low aim position; move back toward the center to level the weapon, or release aim to reset it. With Remaster bindings, RMB aims and LMB fires. Keyboard/controller directions take priority. Mouse turning also works while walking or running, alongside keyboard, stick, and D-pad movement. In Alternate mode it adds native turning to the current movement heading; releasing movement resets that offset. Sensitivity is adjustable in the same menu. Mouse steering confines the cursor to the game during permitted player control and releases it for menus, movies, scripted sequences, and focus changes.
 
-Press **Esc** or controller **Start** to pause. Each game has its own menu styling, with **Display**, **Controls**, and **Game options** pages, plus **System** in RE1/RE2. Every plugin INI option is available in these menus. **Display → Aspect limit** defaults to **16:9**; **Controls → Bindings** switches between Remaster and native bindings independently of movement. Portable settings take effect after restarting. The selected item explains its effect, and the button hints follow keyboard or controller input. Changes are saved automatically to the INI, and all menu text follows the game's language. **Esc / B** returns to the previous page; **Start** resumes the game.
+Press **Esc** or controller **Start** to pause. Each game has its own menu styling, with **Display**, **Controls**, and **Game options** pages, plus **System** in RE1/RE2. Every option of the settings file is available in these menus. **Display → Aspect limit** defaults to **16:9**; **Controls → Bindings** switches between Remaster and native bindings independently of movement. Portable settings take effect after restarting. The selected item explains its effect, and the button hints follow keyboard or controller input. Changes are saved automatically to the settings file, and all menu text follows the game's language. The **Preset** row switches between Vanilla, Recommended and Enhanced. When other loaded plugins have in-game settings ([ASI Settings](https://github.com/ThirteenAG/FusionFixUtils/tree/main/asi_settings)), a **Plugins** row lists them; each opens that plugin's page with its own preset, settings and **Restore defaults**. **Esc / B** returns to the previous page; **Start** resumes the game.
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/Fusion-Fix/ResidentEvilClassicTrilogy.FusionFix/refs/heads/main/.github/docs/video/fusion-fix-menu.webp" width="960" alt="The Fusion Fix menu: presentation, controls, and loading options">
@@ -97,7 +97,9 @@ Press **Esc** or controller **Start** to pause. Each game has its own menu styli
 | **F3** | Toggle widescreen / 4:3 |
 | **F4** | Toggle alternate controls |
 
-Function-key toggles apply to the current session. Use the menu or INI to save your preference.
+Function-key toggles apply to the current session. Use the menu or the settings file to save your preference.
+
+**Settings overlay and FusionFixHub:** press **Ctrl+F10** (or **Back + Start** on a controller) for the settings overlay, which lists every setting, including the advanced ones, and pauses the game while it is open. `FusionFixHub.exe` beside the game executable edits the same settings, also while the game runs.
 
 ### Less waiting between rooms
 
@@ -128,19 +130,27 @@ This makes settings and save paths portable; Steam still requires its normal cli
 
 ## Settings
 
-Edit the matching INI in `plugins/`, or use the in-game menu. The defaults keep the original 4:3 presentation and tank controls, enable intro/door skipping, and enable RE3's wobble fix.
+Use the in-game menu, the settings overlay, FusionFixHub, or edit the settings file (`.cfg`) in `plugins/`. The defaults (the Recommended preset) turn on widescreen, alternate controls with Remaster bindings, mouse steering and auto push, skip intros and doors, and enable RE3's wobble fix.
+
+| Preset | Widescreen | Alternate controls | Remaster bindings | Mouse steering | Auto push | Wobble fix (RE3) | Skip intro | Skip doors | Fast load |
+|:--|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|
+| Vanilla | Off | Off | Off | Off | Off | Off | Off | Off | Off |
+| Recommended (default) | On | On | On | On | On | On | On | On | Off |
+| Enhanced | On | On | On | On | On | On | On | On | On |
+
+Presets change only these settings; aspect limit, pace, Shift behavior, mouse sensitivity and load options stay as you set them.
 
 <details>
 <summary><strong>All options and defaults</strong></summary>
 
 | Option in `[MAIN]` | Default | What it does |
 |:--|:--:|:--|
-| `PanAndScan` | `0` | Widescreen framing with automatic, right-stick, and mouse-wheel vertical panning |
+| `PanAndScan` | `1` | Widescreen framing with automatic, right-stick, and mouse-wheel vertical panning |
 | `MaxAspectRatio` | `16:9` | Display → Aspect limit; accepts a ratio or decimal |
-| `MouseSteering` | `0` | Controls → Mouse steering; mouse turning while standing, walking, or running; high/level/low aim while aiming |
+| `MouseSteering` | `1` | Controls → Mouse steering; mouse turning while standing, walking, or running; high/level/low aim while aiming |
 | `MouseSensitivity` | `1.0` | Controls → Mouse sensitivity; adjustable from 0.25 to 4.0 |
 | `HDControls` | `1` | Remaster keyboard / XInput bindings, quick turn and manual reload; Controls → Bindings |
-| `AlternateControls` | `0` | Screen-relative keyboard and left-stick movement |
+| `AlternateControls` | `1` | Screen-relative keyboard and left-stick movement |
 | `AutoPush` | `1` | RE2/RE3 only: alternate controls automatically switch from running to native-speed pushing; `0` requires walking. RE1 already allows pushing while holding run |
 | `DefaultPace` | `0` | Controls → Default pace: 0 = Walk, 1 = Run |
 | `ShiftBehavior` | `0` | Controls → Shift behavior: 0 = Hold, 1 = Toggle |
@@ -150,11 +160,13 @@ Edit the matching INI in `plugins/`, or use the in-game menu. The defaults keep 
 | `AutoLoad` | `0` | Load the selected save on startup |
 | `LoadSlot` | `0` | Select Latest or a native save entry; see below |
 | `PortableMode` | `1` | RE1/RE2 only: System → Portable settings; keep native settings in an INI; restart after changing |
+| `OverlayHotkey` | `121` | Key held with Ctrl that opens the settings overlay (121 = F10) |
+| `TextLanguage` | `auto` | Language of the settings overlay; `auto` follows the game |
 | `WobbleFix` | `1` | RE3 only: stabilize model geometry |
 
 For alternate keyboard controls, choose **Default pace: Walk / Run** and **Shift behavior: Hold / Toggle** in the Controls menu. Shift selects the opposite pace: hold it temporarily, or press it to toggle. These settings do not change the controller's walking/running behavior.
 
-Default INIs: [RE1](https://github.com/Fusion-Fix/ResidentEvilClassicTrilogy.FusionFix/blob/main/data/plugins/RE1Classic.FusionFix.ini) · [RE2](https://github.com/Fusion-Fix/ResidentEvilClassicTrilogy.FusionFix/blob/main/data/plugins/RE2Classic.FusionFix.ini) · [RE3](https://github.com/Fusion-Fix/ResidentEvilClassicTrilogy.FusionFix/blob/main/data/plugins/RE3Nemesis.FusionFix.ini).
+The settings and their texts: [settings/](https://github.com/Fusion-Fix/ResidentEvilClassicTrilogy.FusionFix/tree/main/settings).
 
 </details>
 

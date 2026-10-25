@@ -7,11 +7,14 @@ module;
 #include "NativeMenu.hxx"
 #include "NativeFont.hxx"
 #include "MouseInput.hxx"
+#include "Overlay.hpp"
 
 export module ClassicMenu;
 import ClassicGame;
+import FixSettings;
 import ClassicInput;
 import Localization;
+import PluginPages;
 
 export namespace ClassicMenu
 {
@@ -19,8 +22,10 @@ export namespace ClassicMenu
     std::atomic<bool> request = false;
     HWND window = nullptr;
     bool confirmation = false, yes = false;
+    // Paused for the settings overlay: the game's last frame is shown without the menu
+    bool overlayPause = false;
     int style = 1;
-    NativeMenu::State menu;
+    NativeMenu::State menu{ .items = PluginPages::Count };
     int maxSlot = 30;
     uint32_t previousInput = 0;
     uint64_t repeatAt = 0;
@@ -48,7 +53,7 @@ export namespace ClassicMenu
     void Close()
     {
         const bool wasOpen = opened;
-        opened = confirmation = false;
+        opened = confirmation = overlayPause = false;
         MouseInput::Reset();
         if (wasOpen) for (const auto& callback : pause) callback(false);
         if (snapshot) { snapshot->Release(); snapshot = nullptr; }
@@ -76,6 +81,7 @@ export namespace ClassicMenu
         case NativeMenu::MouseSteering: return 15;
         case NativeMenu::MouseSensitivity: return 16;
         case NativeMenu::ShiftBehavior: return 17;
+        case NativeMenu::Preset: return 18;
         default: return -1;
         }
     }
@@ -83,13 +89,25 @@ export namespace ClassicMenu
     void Back()
     {
         if (confirmation) confirmation = false;
-        else if (!menu.Return()) Close();
+        else if (!menu.Return(style)) Close();
     }
 
     void Change(int delta)
     {
+        if (menu.Selected(style) == NativeMenu::Item)
+        {
+            PluginPages::Change(menu, delta);
+            return;
+        }
         const int selection = SelectedRow();
         auto& settings = ClassicGame::GetSettings();
+        if (selection == 18)
+        {
+            FixSettings::StepPreset(delta);
+            MouseInput::Reset();
+            ClassicGame::onSettingsChanged().executeAll();
+            return;
+        }
         if (selection == 15)
         {
             auto& enabled = ClassicGame::GetSettings().mouseSteering;
@@ -130,7 +148,12 @@ export namespace ClassicMenu
 
     void Activate()
     {
-        if (!confirmation && menu.Enter(menu.Selected(style))) return;
+        if (!confirmation && menu.Enter(menu.Selected(style), style)) return;
+        if (!confirmation && menu.Selected(style) == NativeMenu::Item)
+        {
+            PluginPages::Activate(menu);
+            return;
+        }
         const int selection = SelectedRow();
         if (confirmation)
         {
@@ -163,6 +186,8 @@ export namespace ClassicMenu
     bool Message(HWND target, UINT message, WPARAM key, LPARAM flags)
     {
         window = target;
+        LRESULT handled = 0;
+        if (FixOverlay::Message(target, message, key, flags, handled)) return true;
         MouseInput::WheelMessage(message, key, ClassicGame::Enabled(ClassicGame::Option::PanAndScan)
             && !opened && !ClassicInput::InNativeMenu());
         MouseInput::Message(target, message, flags, ClassicGame::GetSettings().mouseSteering, opened,
@@ -195,6 +220,21 @@ export namespace ClassicMenu
 
     bool Update()
     {
+        // Changes from FusionFixHub, the overlay or a preset: applied on the game thread
+        if (FixSettings::TakeChanged())
+            ClassicGame::onSettingsChanged().executeAll();
+        if (FixOverlay::Blocks())
+        {
+            if (!opened && ready && Capture(lastDraw, lastSurface))
+            {
+                if (availableSlots) maxSlot = std::clamp(availableSlots(), 0, 65535);
+                MouseInput::Reset();
+                opened = overlayPause = true; confirmation = false; menu.Reset();
+                for (const auto& callback : pause) callback(true);
+            }
+            return opened;
+        }
+        if (overlayPause) Close();
         if (opened || ClassicInput::gameInputSuppressed || (ClassicInput::nativeMenu && ClassicInput::nativeMenu())) MouseInput::Reset();
         ClassicInput::Update();
         const auto& pad = ClassicInput::pad;
@@ -209,6 +249,7 @@ export namespace ClassicMenu
                 if (!Capture(lastDraw, lastSurface)) return false;
                 if (availableSlots) maxSlot = std::clamp(availableSlots(), 0, 65535);
                 MouseInput::Reset();
+                PluginPages::Refresh();
                 opened = true; confirmation = false; menu.Reset();
                 for (const auto& callback : pause) callback(true);
             }
@@ -242,6 +283,7 @@ export namespace ClassicMenu
             if (!Capture(draw, surface)) { Close(); return false; }
         }
         if (FAILED(surface->Blt(nullptr, snapshot, nullptr, DDBLT_WAIT, nullptr))) { Close(); return false; }
+        if (overlayPause) return true;
         DDSURFACEDESC description{ .dwSize = sizeof(DDSURFACEDESC) };
         if (FAILED(surface->GetSurfaceDesc(&description))) { Close(); return false; }
         const auto destination = Presentation::Viewport::Fit(float(description.dwWidth), float(description.dwHeight), 4.0f / 3.0f);
@@ -299,6 +341,8 @@ export namespace ClassicMenu
         };
         const auto value = [&](NativeMenu::Action action) -> std::wstring
         {
+            if (action == NativeMenu::Preset)
+                return Localization::Text(FixSettings::PresetName(FixSettings::CurrentPreset()));
             if (action == NativeMenu::MouseSteering)
                 return Localization::Text(ClassicGame::GetSettings().mouseSteering ? "On" : "Off");
             if (action == NativeMenu::MouseSensitivity)
@@ -336,7 +380,10 @@ export namespace ClassicMenu
             }
             return option >= 0 ? Localization::Text(ClassicGame::Enabled(ClassicGame::Option(option)) ? "On" : "Off") : L"";
         };
-        NativeMenu::Draw(style, menu, confirmation, yes, canLoad && canLoad(), nativePanel, nativeText, Localization::Text, value);
+        const PluginPages::Font pluginFont{ [&](std::wstring_view text) { return font.Width(text); },
+            [&](std::wstring_view text) { return font.Supports(text); } };
+        NativeMenu::Draw(style, menu, confirmation, yes, canLoad && canLoad(), nativePanel, nativeText, Localization::Text, value,
+            [&](int index) { return PluginPages::Item(menu, index, pluginFont); }, PluginPages::Title(menu, pluginFont));
         const bool drawn = SUCCEEDED(surface->Unlock(nullptr));
         if (!drawn) Close();
         return drawn;

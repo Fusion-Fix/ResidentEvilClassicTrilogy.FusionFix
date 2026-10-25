@@ -290,3 +290,42 @@ Scegli se camminare o correre normalmente.
 
 [Hold Shift, or press it to switch pace.]
 Tieni Maiusc o premilo per cambiare andatura.
+
+[Preset]
+Preimpostazione
+
+[Vanilla]
+Originale
+
+[Recommended]
+Consigliata
+
+[Enhanced]
+Migliorata
+
+[Custom]
+Personale
+
+[Choose a preset with Left/Right; it applies at once.]
+Sinistra/Destra: scegli, si applica subito.
+
+[Vanilla: fixes only. Enhanced: everything on.]
+Originale: solo correzioni. Migliorata: tutto attivo.
+
+[Plugins]
+Plugin
+
+[Change the settings of other loaded plugins.]
+Regola le opzioni degli altri plugin caricati.
+
+[Change the settings of this plugin.]
+Regola le opzioni di questo plugin.
+
+[Restore defaults]
+Valori predefiniti
+
+[Reset the settings on this page to their defaults.]
+Ripristina i valori predefiniti di questa pagina.
+
+[Return to the previous page.]
+Torna alla pagina precedente.

@@ -11,14 +11,17 @@ module;
 #include "NativeMenu.hxx"
 #include "NativeFont.hxx"
 #include "MouseInput.hxx"
+#include "Overlay.hpp"
 
 export module Menu;
 import common;
 import Game;
+import FixSettings;
 import Input;
 import Geometry;
 import Localization;
 import Saves;
+import PluginPages;
 
 export namespace Menu
 {
@@ -40,8 +43,10 @@ namespace GameMenu
     std::mutex menuMutex;
     HWND window = nullptr;
     bool confirmation = false, yes = false;
+    // Paused for the settings overlay: the game's last frame is shown without the menu
+    bool overlayPause = false;
     bool previousStart = false;
-    NativeMenu::State menu;
+    NativeMenu::State menu{ .items = PluginPages::Count };
     std::atomic<int> inputDevice = 0;
     uint32_t previousInput = 0;
     std::atomic<uint32_t> keyboardHeld = 0, keyboardPressed = 0;
@@ -209,7 +214,7 @@ namespace GameMenu
             *playTimeAnchor += frameCounter(-1) - pauseTime;
             pauseClock = false;
         }
-        Menu::opened = confirmation = false;
+        Menu::opened = confirmation = overlayPause = false;
         MouseInput::Reset();
         Input::suppressUntilRelease = true;
         *game.held = *game.pressed = 0;
@@ -237,6 +242,7 @@ namespace GameMenu
         case NativeMenu::MouseSteering: return 15;
         case NativeMenu::MouseSensitivity: return 16;
         case NativeMenu::ShiftBehavior: return 17;
+        case NativeMenu::Preset: return 18;
         default: return -1;
         }
     }
@@ -244,12 +250,24 @@ namespace GameMenu
     void Back()
     {
         if (confirmation) confirmation = false;
-        else if (!menu.Return()) Close();
+        else if (!menu.Return(3)) Close();
     }
 
     void Change(int delta)
     {
+        if (menu.Selected(3) == NativeMenu::Item)
+        {
+            PluginPages::Change(menu, delta);
+            return;
+        }
         const int selection = SelectedRow();
+        if (selection == 18)
+        {
+            FixSettings::StepPreset(delta);
+            MouseInput::Reset();
+            Game::onSettingsChanged().executeAll();
+            return;
+        }
         if (selection == 15)
         {
             auto& enabled = Game::GetSettings().mouseSteering;
@@ -300,7 +318,12 @@ namespace GameMenu
 
     void Activate()
     {
-        if (!confirmation && menu.Enter(menu.Selected(3))) return;
+        if (!confirmation && menu.Enter(menu.Selected(3), 3)) return;
+        if (!confirmation && menu.Selected(3) == NativeMenu::Item)
+        {
+            PluginPages::Activate(menu);
+            return;
+        }
         const int selection = SelectedRow();
         if (confirmation)
         {
@@ -347,6 +370,7 @@ namespace GameMenu
                 pauseClock = playTimeAnchor && frameCounter && (*game.flags & 0x08000000);
                 if (pauseClock) pauseTime = frameCounter(-1);
                 confirmation = false;
+                PluginPages::Refresh();
                 menu.Reset();
                 repeatAt = GetTickCount64() + 400;
             }
@@ -385,6 +409,29 @@ namespace GameMenu
 
     bool Update()
     {
+        // Changes from FusionFixHub, the overlay or a preset: applied on the game thread
+        if (FixSettings::TakeChanged())
+            Game::onSettingsChanged().executeAll();
+        if (FixOverlay::Blocks())
+        {
+            const std::lock_guard lock(menuMutex);
+            if (!Menu::opened && Menu::rendererReady)
+            {
+                Menu::opened = overlayPause = true;
+                MouseInput::Reset();
+                Input::suppressUntilRelease = true;
+                pauseClock = playTimeAnchor && frameCounter && (*game.flags & 0x08000000);
+                if (pauseClock) pauseTime = frameCounter(-1);
+                confirmation = false;
+                menu.Reset();
+            }
+            return Menu::opened;
+        }
+        if (overlayPause)
+        {
+            const std::lock_guard lock(menuMutex);
+            Close();
+        }
         DWORD process = 0;
         GetWindowThreadProcessId(GetForegroundWindow(), &process);
         const bool focused = process == GetCurrentProcessId();
@@ -407,6 +454,9 @@ namespace GameMenu
     int __fastcall WindowHook(void* application, void*, UINT message, WPARAM wparam, LPARAM lparam)
     {
         window = Read<HWND>(application, 40);
+        LRESULT handled = 0;
+        if (FixOverlay::Message(window, message, wparam, lparam, handled))
+            return int(handled);
         MouseInput::WheelMessage(message, wparam, Game::Enabled(Game::Option::PanAndScan)
             && !Menu::opened && game.Controllable() && !(*game.flags & 0x10000));
         MouseInput::Message(window, message, lparam, Game::GetSettings().mouseSteering, Menu::opened,
@@ -564,7 +614,7 @@ void Menu::Draw(void* renderer, void* device, void* flat, void* textured)
     if (!opened || !GameMenu::createTexture) return;
     using namespace GameMenu;
     const std::lock_guard lock(menuMutex);
-    if (!opened) return;
+    if (!opened || overlayPause) return;
     const float width = float(Read<int>(renderer, 33996)), height = float(Read<int>(renderer, 34000));
     const auto viewport = Presentation::Viewport::Fit(width, height, 4.0f / 3.0f);
     const float scale = viewport.width / 320.0f;
@@ -594,6 +644,8 @@ void Menu::Draw(void* renderer, void* device, void* flat, void* textured)
     panel(-viewport.x / scale, -viewport.y / scale, width / scale, height / scale, 0xB0000000);
     const auto value = [&](NativeMenu::Action action) -> std::wstring
     {
+        if (action == NativeMenu::Preset)
+            return Localization::Text(FixSettings::PresetName(FixSettings::CurrentPreset()));
         if (action == NativeMenu::MouseSteering)
             return Localization::Text(Game::GetSettings().mouseSteering ? "On" : "Off");
         if (action == NativeMenu::MouseSensitivity)
@@ -632,7 +684,11 @@ void Menu::Draw(void* renderer, void* device, void* flat, void* textured)
         }();
         return option >= 0 ? Localization::Text(Game::Enabled(options[option]) ? "On" : "Off") : L"";
     };
-    NativeMenu::Draw(3, menu, confirmation, yes, Saves::CanLoad(), panel, text, Localization::Text, value);
+    LoadFont();
+    const PluginPages::Font pluginFont{ [](std::wstring_view label) { return font.Width(label); },
+        [](std::wstring_view label) { return font.Supports(label); } };
+    NativeMenu::Draw(3, menu, confirmation, yes, Saves::CanLoad(), panel, text, Localization::Text, value,
+        [&](int index) { return PluginPages::Item(menu, index, pluginFont); }, PluginPages::Title(menu, pluginFont));
 }
 
 class MenuHooks

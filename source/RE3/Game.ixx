@@ -8,6 +8,7 @@ export module Game;
 
 import Geometry;
 import common;
+import FixSettings;
 
 export namespace Game
 {
@@ -21,29 +22,24 @@ export namespace Game
         std::array<std::atomic<bool>, 8> enabled;
         std::atomic<int> loadSlot = 0;
         std::atomic<bool> defaultRun = false, shiftToggle = false;
-        std::atomic<bool> hdControls = true, mouseSteering = false;
+        std::atomic<bool> hdControls = true, mouseSteering = true;
         std::atomic<float> mouseSensitivity = 1.0f;
         std::atomic<float> maxAspectRatio = 16.0f / 9.0f;
 
         Settings()
         {
-            CIniReader reader("");
-            mouseSteering = reader.ReadInteger("MAIN", "MouseSteering", 0) != 0;
-            const float sensitivity = reader.ReadFloat("MAIN", "MouseSensitivity", 1.0f);
-            mouseSensitivity = std::isfinite(sensitivity) ? std::clamp(sensitivity, 0.25f, 4.0f) : 1.0f;
-            hdControls = reader.ReadInteger("MAIN", "HDControls", 1) != 0;
-            maxAspectRatio = Presentation::ParseAspectRatio(reader.ReadString("MAIN", "MaxAspectRatio", "16:9"));
-            enabled[0] = reader.ReadInteger("MAIN", "WobbleFix", 1) != 0;
-            enabled[1] = reader.ReadInteger("MAIN", "PanAndScan", 0) != 0;
-            enabled[2] = reader.ReadInteger("MAIN", "AlternateControls", 0) != 0;
-            enabled[3] = reader.ReadInteger("MAIN", "SkipIntro", 1) != 0;
-            enabled[4] = reader.ReadInteger("MAIN", "SkipDoor", 1) != 0;
-            enabled[5] = reader.ReadInteger("MAIN", "FastLoad", 0) != 0;
-            enabled[6] = reader.ReadInteger("MAIN", "AutoLoad", 0) != 0;
-            enabled[7] = reader.ReadInteger("MAIN", "AutoPush", 1) != 0;
-            defaultRun = reader.ReadInteger("MAIN", "DefaultPace", 0) != 0;
-            shiftToggle = reader.ReadInteger("MAIN", "ShiftBehavior", 0) != 0;
-            loadSlot = std::clamp(reader.ReadInteger("MAIN", "LoadSlot", 0), 0, 30);
+            for (size_t i = 0; i < optionNames.size(); ++i)
+            {
+                enabled[i] = i != 5 && i != 6; // FastLoad and AutoLoad are off
+                FixSettings::Bind(std::string("MAIN.") + optionNames[i], enabled[i]);
+            }
+            FixSettings::Bind("MAIN.MouseSteering", mouseSteering);
+            FixSettings::Bind("MAIN.MouseSensitivity", mouseSensitivity, 0.25f, 4.0f);
+            FixSettings::Bind("MAIN.HDControls", hdControls);
+            FixSettings::BindAspect("MAIN.MaxAspectRatio", maxAspectRatio);
+            FixSettings::Bind("MAIN.DefaultPace", defaultRun);
+            FixSettings::Bind("MAIN.ShiftBehavior", shiftToggle);
+            FixSettings::Bind("MAIN.LoadSlot", loadSlot, 0, 30);
         }
     };
 
@@ -60,18 +56,19 @@ export namespace Game
         return event;
     }
 
+    // Stores the values the native menu changed
     void SaveSettings()
     {
-        CIniReader reader("");
+        auto& settings = GetSettings();
         for (size_t i = 0; i < optionNames.size(); ++i)
-            reader.WriteInteger("MAIN", optionNames[i], int(GetSettings().enabled[i].load()), true);
-        reader.WriteInteger("MAIN", "MouseSteering", int(GetSettings().mouseSteering.load()), true);
-        reader.WriteString("MAIN", "MouseSensitivity", std::to_string(GetSettings().mouseSensitivity.load()), true);
-        reader.WriteInteger("MAIN", "HDControls", int(GetSettings().hdControls.load()), true);
-        reader.WriteString("MAIN", "MaxAspectRatio", std::to_string(GetSettings().maxAspectRatio.load()), true);
-        reader.WriteInteger("MAIN", "DefaultPace", int(GetSettings().defaultRun.load()), true);
-        reader.WriteInteger("MAIN", "ShiftBehavior", int(GetSettings().shiftToggle.load()), true);
-        reader.WriteInteger("MAIN", "LoadSlot", GetSettings().loadSlot.load(), true);
+            FixSettings::Store(std::string("MAIN.") + optionNames[i], settings.enabled[i].load());
+        FixSettings::Store("MAIN.MouseSteering", settings.mouseSteering.load());
+        FixSettings::Store("MAIN.MouseSensitivity", settings.mouseSensitivity.load());
+        FixSettings::Store("MAIN.HDControls", settings.hdControls.load());
+        FixSettings::StoreAspect("MAIN.MaxAspectRatio", settings.maxAspectRatio.load());
+        FixSettings::Store("MAIN.DefaultPace", settings.defaultRun.load());
+        FixSettings::Store("MAIN.ShiftBehavior", settings.shiftToggle.load());
+        FixSettings::Store("MAIN.LoadSlot", settings.loadSlot.load());
     }
 
     void Toggle(Option option)

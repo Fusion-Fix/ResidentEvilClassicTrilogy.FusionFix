@@ -75,8 +75,7 @@ public:
         FusionFix::onInitEvent() += []()
         {
             IntroSkip::Init();
-            CIniReader iniReader("");
-            if (!iniReader.ReadInteger("MAIN", "SkipIntro", 1))
+            if (!Game::Enabled(Game::Option::SkipIntro))
                 return;
 
             auto logoPattern = hook::pattern("A9 00 00 00 20 0F 84 ? ? ? ? A0 ? ? ? ? 84 C0");

@@ -14,8 +14,6 @@ if (!(Test-Path -LiteralPath $loader -PathType Leaf)) { throw "Missing Win32 Ult
 if (!(Test-Path -LiteralPath (Join-Path $gameRoot $Executable) -PathType Leaf)) { throw "Missing debugger executable: $Executable" }
 $definitions = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'games.json') -Raw | ConvertFrom-Json
 $definition = $definitions | Where-Object id -eq $Game
-$settings = Join-Path $PSScriptRoot "data/plugins/$($definition.project).ini"
-if (!(Test-Path -LiteralPath $settings -PathType Leaf)) { throw "Missing plugin settings: $settings" }
 $loaderName = if ($Store -eq 'Steam') { 'version.dll' } else { 'dsound.dll' }
 $destinations = if ($Store -eq 'Steam') {
     @($definition.languages.PSObject.Properties | Where-Object {
@@ -47,10 +45,6 @@ foreach ($destination in $destinations) {
     $pluginDirectory = Join-Path $destination 'plugins'
     New-Item -ItemType Directory -Force -Path $pluginDirectory | Out-Null
     Copy-Item -LiteralPath $pluginPath -Destination $pluginDirectory -Force
-    $installedSettings = Join-Path $pluginDirectory "$($definition.project).ini"
-    if (!(Test-Path -LiteralPath $installedSettings)) {
-        Copy-Item -LiteralPath $settings -Destination $installedSettings
-    }
     $pdb = [IO.Path]::ChangeExtension($pluginPath, '.pdb')
     if (Test-Path -LiteralPath $pdb -PathType Leaf) { Copy-Item -LiteralPath $pdb -Destination $pluginDirectory -Force }
     Write-Host "Installed $Game $Store Fusion Fix: $pluginDirectory"

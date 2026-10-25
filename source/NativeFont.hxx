@@ -74,7 +74,8 @@ namespace NativeFont
             return c;
         }
     };
-    struct Glyph { int atlas, x, y, width, height, advance; };
+    // top: rows left empty above the glyph
+    struct Glyph { int atlas, x, y, width, height, advance, top = 0; };
     struct Image { int width = 0, height = 0; std::vector<uint32_t> pixels; };
 
     class Font
@@ -165,7 +166,35 @@ namespace NativeFont
                     glyphs[L'。'] = {0, (L'.' - 32) * 8, 0, 8, 8, 8};
                 }
             }
+            if (game != 3) FixPeriod();
             return true;
+        }
+        // The period's cell is empty in the western RE1/RE2 atlases and holds a filled block in Japanese RE1:
+        // draw the lower dot of the colon instead, resting on the baseline of the letters
+        void FixPeriod()
+        {
+            const auto opaque = [&](const Glyph& glyph, int y)
+            {
+                int count = 0;
+                for (int x = 0; x < glyph.width; ++x) count += (atlases[glyph.atlas].Pixel(glyph.x + x, glyph.y + y, false) >> 24) != 0;
+                return count;
+            };
+            const auto period = glyphs.find(L'.'), colon = glyphs.find(L':'), letter = glyphs.find(L'i');
+            if (period == glyphs.end() || colon == glyphs.end() || letter == glyphs.end()) return;
+            int filled = 0;
+            for (int y = 0; y < period->second.height; ++y) filled += opaque(period->second, y);
+            if (filled && filled < period->second.width * period->second.height) return;
+            // The lower half of the colon's rows, and the lowest row of the letter
+            int first = -1, end = -1, baseline = -1;
+            for (int y = 0; y < colon->second.height; ++y) if (opaque(colon->second, y)) { if (first < 0) first = y; end = y; }
+            for (int y = 0; y < letter->second.height; ++y) if (opaque(letter->second, y)) baseline = y;
+            const int start = first + (end - first + 1) / 2;
+            if (first < 0 || start > end || baseline < end - start) return;
+            auto dot = colon->second;
+            dot.y += start;
+            dot.height = end - start + 1;
+            dot.top = baseline - end + start;
+            period->second = dot;
         }
         bool Files(int game, std::string_view language)
         {
@@ -189,6 +218,27 @@ namespace NativeFont
         {
             Image image;
             if (!Ready() || text.empty()) return image;
+            const auto letters = Layout(text, image);
+            image.pixels.resize(size_t(image.width) * image.height);
+            int offset = 0;
+            for (const auto& glyph : letters)
+            {
+                for (int y = 0; y < glyph.height; ++y) for (int x = 0; x < glyph.width; ++x)
+                    image.pixels[(glyph.top + y) * image.width + offset + x] = atlases[glyph.atlas].Pixel(glyph.x + x, glyph.y + y, green);
+                offset += glyph.advance;
+            }
+            return image;
+        }
+        // Width of the rendered text in atlas pixels
+        int Width(std::wstring_view text) const
+        {
+            Image image;
+            if (Ready()) Layout(text, image);
+            return image.width;
+        }
+    private:
+        std::vector<Glyph> Layout(std::wstring_view text, Image& image) const
+        {
             std::vector<Glyph> letters;
             for (auto c : text)
             {
@@ -208,18 +258,10 @@ namespace NativeFont
                         { left = std::min(left, x); right = std::max(right, x); }
                     if (right >= left) { glyph.x += left; glyph.width = right - left + 1; glyph.advance = glyph.width + 1; }
                 }
-                image.width += glyph.advance; image.height = std::max(image.height, glyph.height);
+                image.width += glyph.advance; image.height = std::max(image.height, glyph.top + glyph.height);
                 letters.push_back(glyph);
             }
-            image.pixels.resize(size_t(image.width) * image.height);
-            int offset = 0;
-            for (const auto& glyph : letters)
-            {
-                for (int y = 0; y < glyph.height; ++y) for (int x = 0; x < glyph.width; ++x)
-                    image.pixels[y * image.width + offset + x] = atlases[glyph.atlas].Pixel(glyph.x + x, glyph.y + y, green);
-                offset += glyph.advance;
-            }
-            return image;
+            return letters;
         }
     };
 }

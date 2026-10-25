@@ -1,0 +1,475 @@
+{
+  "format": "asi-settings",
+  "version": "1.0",
+  "plugin": {
+    "name": "Fusion Fix",
+    "priority": 100,
+    "games": [
+      {
+        "name": "Resident Evil",
+        "launcher": [
+          "4249100_Launcher.exe"
+        ],
+        "exe": [
+          {
+            "path": "english/ResidentEvil.exe",
+            "label": "ResidentEvil (english)"
+          },
+          {
+            "path": "french/ResidentEvil.exe",
+            "label": "ResidentEvil (french)"
+          },
+          {
+            "path": "german/ResidentEvil.exe",
+            "label": "ResidentEvil (german)"
+          },
+          {
+            "path": "japanese/Biohazard.exe",
+            "label": "Biohazard (japanese)"
+          },
+          "ResidentEvil.exe"
+        ]
+      }
+    ]
+  },
+  "pages": [
+    {
+      "id": "display",
+      "title": "@page.display",
+      "section": "display"
+    },
+    {
+      "id": "controls",
+      "title": "@page.controls",
+      "section": "controls"
+    },
+    {
+      "id": "game",
+      "title": "@page.game",
+      "section": "other"
+    },
+    {
+      "id": "system",
+      "title": "@page.system",
+      "section": "compatibility"
+    }
+  ],
+  "settings": [
+    {
+      "id": "MAIN.PanAndScan",
+      "type": "bool",
+      "default": 1,
+      "label": "@widescreen",
+      "description": "@widescreen.description",
+      "page": "display",
+      "control": [
+        "switch",
+        "cycler"
+      ],
+      "presets": {
+        "vanilla": 0,
+        "recommended": 1,
+        "enhanced": 1
+      }
+    },
+    {
+      "id": "MAIN.MaxAspectRatio",
+      "type": "string",
+      "default": "16:9",
+      "suggestions": [
+        {
+          "value": "4:3"
+        },
+        {
+          "value": "16:10"
+        },
+        {
+          "value": "16:9"
+        },
+        {
+          "value": "21:9"
+        },
+        {
+          "value": "32:9"
+        }
+      ],
+      "label": "@aspectlimit",
+      "description": "@aspectlimit.description",
+      "page": "display",
+      "control": [
+        "cycler",
+        "text"
+      ]
+    },
+    {
+      "id": "MAIN.AlternateControls",
+      "type": "choice",
+      "default": 1,
+      "choices": [
+        {
+          "value": 0,
+          "label": "@original"
+        },
+        {
+          "value": 1,
+          "label": "@alternate"
+        }
+      ],
+      "label": "@controltype",
+      "description": "@controltype.description",
+      "page": "controls",
+      "control": [
+        "cycler",
+        "segmented"
+      ],
+      "presets": {
+        "vanilla": 0,
+        "recommended": 1,
+        "enhanced": 1
+      }
+    },
+    {
+      "id": "MAIN.HDControls",
+      "type": "choice",
+      "default": 1,
+      "choices": [
+        {
+          "value": 1,
+          "label": "@remaster"
+        },
+        {
+          "value": 0,
+          "label": "@original"
+        }
+      ],
+      "label": "@bindings",
+      "description": "@bindings.description",
+      "page": "controls",
+      "control": [
+        "cycler",
+        "segmented"
+      ],
+      "presets": {
+        "vanilla": 0,
+        "recommended": 1,
+        "enhanced": 1
+      }
+    },
+    {
+      "id": "MAIN.DefaultPace",
+      "type": "choice",
+      "default": 0,
+      "choices": [
+        {
+          "value": 0,
+          "label": "@walk"
+        },
+        {
+          "value": 1,
+          "label": "@run"
+        }
+      ],
+      "label": "@defaultpace",
+      "description": "@defaultpace.description",
+      "page": "controls",
+      "control": [
+        "cycler",
+        "segmented"
+      ]
+    },
+    {
+      "id": "MAIN.ShiftBehavior",
+      "type": "choice",
+      "default": 0,
+      "choices": [
+        {
+          "value": 0,
+          "label": "@hold"
+        },
+        {
+          "value": 1,
+          "label": "@toggle"
+        }
+      ],
+      "label": "@shiftbehavior",
+      "description": "@shiftbehavior.description",
+      "page": "controls",
+      "control": [
+        "cycler",
+        "segmented"
+      ]
+    },
+    {
+      "id": "MAIN.MouseSteering",
+      "type": "bool",
+      "default": 1,
+      "label": "@mousesteering",
+      "description": "@mousesteering.description",
+      "page": "controls",
+      "control": [
+        "switch",
+        "cycler"
+      ],
+      "presets": {
+        "vanilla": 0,
+        "recommended": 1,
+        "enhanced": 1
+      }
+    },
+    {
+      "id": "MAIN.MouseSensitivity",
+      "type": "float",
+      "default": 1.0,
+      "min": 0.25,
+      "max": 4.0,
+      "step": 0.25,
+      "decimals": 2,
+      "label": "@mousesensitivity",
+      "description": "@mousesensitivity.description",
+      "page": "controls",
+      "control": [
+        "slider"
+      ],
+      "enabledIf": {
+        "setting": "MAIN.MouseSteering",
+        "equals": 1
+      }
+    },
+    {
+      "id": "MAIN.SkipIntro",
+      "type": "bool",
+      "default": 1,
+      "label": "@skipintro",
+      "description": "@skipintro.description",
+      "page": "game",
+      "control": [
+        "switch",
+        "cycler"
+      ],
+      "apply": "restart",
+      "presets": {
+        "vanilla": 0,
+        "recommended": 1,
+        "enhanced": 1
+      }
+    },
+    {
+      "id": "MAIN.SkipDoor",
+      "type": "bool",
+      "default": 1,
+      "label": "@skipdoors",
+      "description": "@skipdoors.description",
+      "page": "game",
+      "control": [
+        "switch",
+        "cycler"
+      ],
+      "presets": {
+        "vanilla": 0,
+        "recommended": 1,
+        "enhanced": 1
+      }
+    },
+    {
+      "id": "MAIN.FastLoad",
+      "type": "bool",
+      "default": 0,
+      "label": "@fastload",
+      "description": "@fastload.description",
+      "page": "game",
+      "control": [
+        "switch",
+        "cycler"
+      ],
+      "presets": {
+        "vanilla": 0,
+        "recommended": 0,
+        "enhanced": 1
+      }
+    },
+    {
+      "id": "MAIN.AutoLoad",
+      "type": "bool",
+      "default": 0,
+      "label": "@autoload",
+      "description": "@autoload.description",
+      "page": "game",
+      "control": [
+        "switch",
+        "cycler"
+      ],
+      "apply": "restart"
+    },
+    {
+      "id": "MAIN.LoadSlot",
+      "type": "int",
+      "default": 0,
+      "min": 0,
+      "max": 8,
+      "step": 1,
+      "special": [
+        {
+          "value": 0,
+          "label": "@latest"
+        }
+      ],
+      "label": "@loadslot",
+      "description": "@loadslot.description",
+      "page": "game",
+      "control": [
+        "cycler",
+        "slider"
+      ]
+    },
+    {
+      "id": "MAIN.OverlayHotkey",
+      "type": "choice",
+      "default": 121,
+      "choices": [
+        {
+          "value": 112,
+          "label": "Ctrl+F1"
+        },
+        {
+          "value": 113,
+          "label": "Ctrl+F2"
+        },
+        {
+          "value": 114,
+          "label": "Ctrl+F3"
+        },
+        {
+          "value": 115,
+          "label": "Ctrl+F4"
+        },
+        {
+          "value": 116,
+          "label": "Ctrl+F5"
+        },
+        {
+          "value": 117,
+          "label": "Ctrl+F6"
+        },
+        {
+          "value": 118,
+          "label": "Ctrl+F7"
+        },
+        {
+          "value": 119,
+          "label": "Ctrl+F8"
+        },
+        {
+          "value": 120,
+          "label": "Ctrl+F9"
+        },
+        {
+          "value": 121,
+          "label": "Ctrl+F10"
+        },
+        {
+          "value": 122,
+          "label": "Ctrl+F11"
+        },
+        {
+          "value": 123,
+          "label": "Ctrl+F12"
+        },
+        {
+          "value": 45,
+          "label": "Ctrl+Insert"
+        },
+        {
+          "value": 36,
+          "label": "Ctrl+Home"
+        },
+        {
+          "value": 33,
+          "label": "Ctrl+Page Up"
+        },
+        {
+          "value": 34,
+          "label": "Ctrl+Page Down"
+        },
+        {
+          "value": 35,
+          "label": "Ctrl+End"
+        },
+        {
+          "value": 46,
+          "label": "Ctrl+Delete"
+        },
+        {
+          "value": 19,
+          "label": "Ctrl+Pause"
+        },
+        {
+          "value": 145,
+          "label": "Ctrl+Scroll Lock"
+        },
+        {
+          "value": 192,
+          "label": "Ctrl+` (grave)"
+        }
+      ],
+      "label": "@overlayhotkey",
+      "description": "@overlayhotkey.description",
+      "page": "game",
+      "control": [
+        "dropdown"
+      ],
+      "visibility": "editor"
+    },
+    {
+      "id": "MAIN.PortableMode",
+      "type": "bool",
+      "default": 1,
+      "label": "@portable",
+      "description": "@portable.description",
+      "page": "system",
+      "control": [
+        "switch",
+        "cycler"
+      ],
+      "apply": "restart"
+    },
+    {
+      "id": "MAIN.TextLanguage",
+      "type": "choice",
+      "default": "auto",
+      "choices": [
+        {
+          "value": "auto",
+          "label": "@textlanguage.auto"
+        },
+        {
+          "value": "en",
+          "label": "English"
+        },
+        {
+          "value": "fr",
+          "label": "Français"
+        },
+        {
+          "value": "de",
+          "label": "Deutsch"
+        },
+        {
+          "value": "it",
+          "label": "Italiano"
+        },
+        {
+          "value": "es",
+          "label": "Español"
+        },
+        {
+          "value": "ja",
+          "label": "日本語"
+        }
+      ],
+      "label": "@textlanguage",
+      "description": "@textlanguage.description",
+      "page": "system",
+      "visibility": "editor"
+    }
+  ]
+}

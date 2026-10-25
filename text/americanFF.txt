@@ -293,3 +293,42 @@ Choose whether you normally walk or run.
 
 [Hold Shift, or press it to switch pace.]
 Hold Shift, or press it to switch pace.
+
+[Preset]
+Preset
+
+[Vanilla]
+Vanilla
+
+[Recommended]
+Recommended
+
+[Enhanced]
+Enhanced
+
+[Custom]
+Custom
+
+[Choose a preset with Left/Right; it applies at once.]
+Choose a preset with Left/Right; it applies at once.
+
+[Vanilla: fixes only. Enhanced: everything on.]
+Vanilla: fixes only. Enhanced: everything on.
+
+[Plugins]
+Plugins
+
+[Change the settings of other loaded plugins.]
+Change the settings of other loaded plugins.
+
+[Change the settings of this plugin.]
+Change the settings of this plugin.
+
+[Restore defaults]
+Restore defaults
+
+[Reset the settings on this page to their defaults.]
+Reset the settings on this page to their defaults.
+
+[Return to the previous page.]
+Return to the previous page.

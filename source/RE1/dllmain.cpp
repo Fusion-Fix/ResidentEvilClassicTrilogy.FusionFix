@@ -1,4 +1,5 @@
 #include <common.hxx>
+#include "../Overlay.hpp"
 
 import common;
 import PortableSettings;
@@ -12,6 +13,7 @@ import RE1Saves;
 
 void Init()
 {
+    FixOverlay::Init();
     Localization::Init();
     FusionFix::onInitEvent().executeAll();
 }

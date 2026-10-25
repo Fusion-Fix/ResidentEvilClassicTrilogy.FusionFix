@@ -290,3 +290,42 @@ Normalerweise gehen oder rennen.
 
 [Hold Shift, or press it to switch pace.]
 Umschalt halten oder zum Wechseln drücken.
+
+[Preset]
+Voreinstellung
+
+[Vanilla]
+Original
+
+[Recommended]
+Empfohlen
+
+[Enhanced]
+Erweitert
+
+[Custom]
+Eigene
+
+[Choose a preset with Left/Right; it applies at once.]
+Links/Rechts: wählen, sofort aktiv.
+
+[Vanilla: fixes only. Enhanced: everything on.]
+Original: nur Korrekturen. Erweitert: alles an.
+
+[Plugins]
+Plugins
+
+[Change the settings of other loaded plugins.]
+Optionen anderer geladener Plugins einstellen.
+
+[Change the settings of this plugin.]
+Optionen dieses Plugins einstellen.
+
+[Restore defaults]
+Standardwerte
+
+[Reset the settings on this page to their defaults.]
+Diese Seite auf Standardwerte zurücksetzen.
+
+[Return to the previous page.]
+Zur vorherigen Seite zurückkehren.

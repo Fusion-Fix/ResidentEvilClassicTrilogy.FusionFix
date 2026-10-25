@@ -8,6 +8,7 @@ module;
 
 export module PortableSettings;
 import common;
+import FixSettings;
 
 namespace NativeSettings
 {
@@ -385,8 +386,7 @@ export namespace PortableSettings
 
     bool Init(int game)
     {
-        CIniReader reader("");
-        if (!reader.ReadInteger("MAIN", "PortableMode", 1)) return true;
+        if (!FixSettings::Plugin().Bool("MAIN.PortableMode")) return true;
         auto& state = NativeSettings::State();
         const std::lock_guard lock(state.mutex);
         if (state.initialized) return true;

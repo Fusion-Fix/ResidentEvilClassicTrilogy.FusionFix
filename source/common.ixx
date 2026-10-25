@@ -2,8 +2,8 @@ module;
 
 #include <common.hxx>
 #include <Zydis.h>
-#include "includes/gameref.hpp"
-#include "includes/callbacks.h"
+#include "gameref.hpp"
+#include "callbacks.h"
 
 export module common;
 

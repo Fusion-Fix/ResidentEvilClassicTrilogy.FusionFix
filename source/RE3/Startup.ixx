@@ -48,8 +48,7 @@ namespace IntroSkip
     void Init()
     {
         auto startup = hook::pattern("64 A1 00 00 00 00 6A FF 68 ? ? ? ? 50 64 89 25 00 00 00 00 81 EC 4C 08 00 00 53 55 56 33 DB 57 8B F1");
-        if (startup.size() == 1)
-            shGameStartup = safetyhook::create_inline(startup.get_first(), GameStartupHook);
+        shGameStartup = safetyhook::create_inline(startup.get_first(), GameStartupHook);
         // The Japanese story routine also loads a warning image. Only the
         // startup warning begins with the native 30-frame fade-in.
         auto warning = hook::pattern("68 00 40 19 80 E8 ? ? ? ? 05 00 80 00 00 50 68 ? ? ? ? E8 ? ? ? ? 6A 00 6A 02 E8 ? ? ? ? 6A 1E");
@@ -57,7 +56,6 @@ namespace IntroSkip
         auto title = hook::pattern("56 8B 74 24 08 8A 46 01 8B C8 81 E1 FF 00 00 00 83 F9 03 0F 87 ? ? ? ? FF 24 8D");
         auto fade = hook::pattern("8B 44 24 04 8B C8 C1 E1 04 03 C8 33 C0 8A 04 8D ? ? ? ? C3");
         auto exit = hook::pattern("56 8B 35 ? ? ? ? 66 C7 06 00 00 E8 ? ? ? ? 8B 46 08 50 E8 ? ? ? ? E8 ? ? ? ? 68 00 00 00 FF");
-        if (warning.size() != 1 || handshake.size() != 1 || title.size() != 1 || fade.size() != 1 || exit.size() != 1) return;
         busy = *handshake.get_first<uint8_t*>(2);
         fades = *fade.get_first<uint8_t*>(16);
         yield = reinterpret_cast<decltype(yield)>(injector::GetBranchDestination(handshake.get_first(9)).as_int());
@@ -82,22 +80,16 @@ public:
             auto sequencePattern = hook::pattern("83 FE 09 0F 87 0E 01 00 00 FF 24 B5 ? ? ? ?");
             auto moviePattern = hook::pattern("F6 05 ? ? ? ? 80 75 ? 6A 0C E8 ? ? ? ? A1");
             auto sourceNextMoviePattern = hook::pattern("A8 04 5E 75 ? A8 80 75 ? 6A 0C E8 ? ? ? ? A1");
-            if (logoPattern.size() != 1 || sequencePattern.size() != 1
-                || moviePattern.size() + sourceNextMoviePattern.size() != 1)
-                return;
-
             auto* logo = logoPattern.get_first<uint8_t>();
             auto* sequence = sequencePattern.get_first<uint8_t>();
-            if (sequence != logo + 49)
-                return;
 
             // Keep the warning-screen handshake and the native title initialization.
             auto* title = logo + 11 + injector::ReadMemory<int32_t>(logo + 7, false);
             injector::MakeJMP(sequence, title, true);
 
             // Skip only the startup movie branch, leaving story and attract movies intact.
-            auto* movie = moviePattern.size() ? moviePattern.get_first<uint8_t>(7)
-                                             : sourceNextMoviePattern.get_first<uint8_t>(7);
+            auto* movie = !moviePattern.empty() ? moviePattern.get_first<uint8_t>(7)
+                                                : sourceNextMoviePattern.get_first<uint8_t>(7);
             injector::WriteMemory<uint8_t>(movie, 0xEB, true);
         };
     }

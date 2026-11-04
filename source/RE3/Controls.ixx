@@ -228,32 +228,26 @@ namespace AlternateControls
 
     static void Init()
     {
-        if (!Game::Resolve(game))
-            return;
+        Game::Resolve(game);
         auto reload = hook::pattern("51 A1 ? ? ? ? 80 B8 28 01 00 00 FF 75 04 0C FF 59 C3 8A 80 29 01 00 00");
         auto capacity = hook::pattern("8A 04 85 ? ? ? ? 2A C1 3A C2 88 44 24 0C");
-        if (reload.size() == 1 && capacity.size() == 1)
-        {
-            inventory = *reload.get_first<uint8_t**>(2);
-            capacities = *capacity.get_first<uint8_t*>(3);
-            canReload = reinterpret_cast<decltype(canReload)>(reload.get_first());
-        }
+        inventory = *reload.get_first<uint8_t**>(2);
+        capacities = *capacity.get_first<uint8_t*>(3);
+        canReload = reinterpret_cast<decltype(canReload)>(reload.get_first());
         auto contact = hook::pattern("8A 91 C0 00 00 00 8D 81 C0 00 00 00 66 8B 71 3C FE C2 88 10 8A 18 66 8B 51 34");
-        if (contact.size() == 1)
-            shPushContact = safetyhook::create_mid(contact.get_first(), [](SafetyHookContext&)
-            {
-                // Native collision has already selected a single pushable
-                // object on the player's floor and rejected disabled objects.
-                if (!Game::Enabled(Game::Option::AutoPush) || !moving || Input::suppressUntilRelease || !game.Controllable()
-                    || !Game::Enabled(Game::Option::AlternateControls)
-                    || Read<uint8_t>(game.player, 5) > 2) return;
-                pushContact = true;
-                contactYaw = Read<int16_t>(game.player, 110);
-            });
+        shPushContact = safetyhook::create_mid(contact.get_first(), [](SafetyHookContext&)
+        {
+            // Native collision has already selected a single pushable
+            // object on the player's floor and rejected disabled objects.
+            if (!Game::Enabled(Game::Option::AutoPush) || !moving || Input::suppressUntilRelease || !game.Controllable()
+                || !Game::Enabled(Game::Option::AlternateControls)
+                || Read<uint8_t>(game.player, 5) > 2) return;
+            pushContact = true;
+            contactYaw = Read<int16_t>(game.player, 110);
+        });
         defaultRun = Game::GetSettings().defaultRun;
         shiftToggle = Game::GetSettings().shiftToggle;
-        auto aimRates = hook::pattern("8A 88 ? ? ? ? 80 E1 7F 8A D1 66");
-        if (aimRates.size()) aimTurnRates = *aimRates.get_first<const uint8_t*>(2);
+        aimTurnRates = *hook::pattern("8A 88 ? ? ? ? 80 E1 7F 8A D1 66").get_first<const uint8_t*>(2);
         shMovement = safetyhook::create_inline(game.movement, MovementHook);
     }
 }

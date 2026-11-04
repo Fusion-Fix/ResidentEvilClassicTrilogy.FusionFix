@@ -186,97 +186,80 @@ namespace RE2Controls
     void Init()
     {
         auto input = hook::pattern("B9 ? ? ? ? E8 ? ? ? ? A1 ? ? ? ? C7 05 ? ? ? ? 00 00 00 00 85 C0 74 21 A1 ? ? ? ? 6A 00 50 E8");
-        const bool recordedLegacy = input.size() == 1;
+        const bool recordedLegacy = !input.empty();
         if (!recordedLegacy)
             input = hook::pattern("B9 ? ? ? ? E8 ? ? ? ? A1 ? ? ? ? 85 C0 74 15 A1 ? ? ? ? 6A 00 50 E8 ? ? ? ? 83 C4 08 A3 ? ? ? ? 83 3D ? ? ? ? 02 7C 27");
-        if (input.size() == 1)
+        if (recordedLegacy) legacyInput = *input.get_first<uint32_t*>(0x45);
+        else
         {
-            if (recordedLegacy) legacyInput = *input.get_first<uint32_t*>(0x45);
-            else
-            {
-                // French/Japanese do not retain the mapped legacy-pad packet.
-                // Capture device 1 after its native mapping, excluding keyboard input.
-                auto* code = input.get_first<uint8_t>();
-                shLegacyMap = safetyhook::create_inline(code + 0x20 + Read<int32_t>(code, 0x1C), LegacyMap);
-            }
-            shInput = safetyhook::create_inline(input.get_first(), Input);
-            ClassicMenu::pause.emplace_back([](bool) { waitForInputRelease = true; });
+            // French/Japanese do not retain the mapped legacy-pad packet.
+            // Capture device 1 after its native mapping, excluding keyboard input.
+            auto* code = input.get_first<uint8_t>();
+            shLegacyMap = safetyhook::create_inline(code + 0x20 + Read<int32_t>(code, 0x1C), LegacyMap);
         }
+        shInput = safetyhook::create_inline(input.get_first(), Input);
+        ClassicMenu::pause.emplace_back([](bool) { waitForInputRelease = true; });
         auto movement = hook::pattern("8B 0D ? ? ? ? 8B 15 ? ? ? ? 56 8B 74 24 08 33 C0 51 8A 46 05 52 56 FF 14 85");
         auto matrix = hook::pattern("BF ? ? ? ? F3 A5 8B 4C 24 4C 8B 70 04 8B 18 8B 69 04");
         auto player = hook::pattern("A1 ? ? ? ? 83 C7 04 3B B8 4C 21 00 00 75 ? 8D B0 10 3A 00 00");
         auto gameplay = hook::pattern("A0 ? ? ? ? 53 55 8B 2D ? ? ? ? 56 57 A8 02 74 ? 8B C5 24 01 F6 D8 1B C0");
-        if (movement.size() != 1 || matrix.size() != 1 || player.size() != 1 || gameplay.size() != 1) return;
         pressed = *movement.get_first<uint32_t*>(2);
         held = *movement.get_first<uint32_t*>(8);
         view = *matrix.get_first<void*>(1);
         game = *player.get_first<void**>(1);
         control = *gameplay.get_first<uint32_t*>(9);
         auto contact = hook::pattern("8A 95 44 01 00 00 66 8B 5D 38 FE C2 88 95 44 01 00 00 8A C2 66 8B 55 40");
-        if (contact.size() == 1)
-            shPushContact = safetyhook::create_mid(contact.get_first(), [](SafetyHookContext&)
-            {
-                // This point follows the native single-object, floor, facing
-                // and pushability checks; ordinary wall collisions never reach it.
-                if (!ClassicGame::Enabled(ClassicGame::Option::AutoPush) || !moving || ClassicInput::gameInputSuppressed
-                    || !ClassicGame::Enabled(ClassicGame::Option::AlternateControls) || !*game) return;
-                const auto* actor = static_cast<uint8_t*>(*game) + 14864;
-                if (Read<uint8_t>(actor, 4) != 1 || Read<uint8_t>(actor, 5) > 2) return;
-                pushContact = true;
-                contactYaw = Read<int16_t>(actor, 118);
-            });
+        shPushContact = safetyhook::create_mid(contact.get_first(), [](SafetyHookContext&)
+        {
+            // This point follows the native single-object, floor, facing
+            // and pushability checks; ordinary wall collisions never reach it.
+            if (!ClassicGame::Enabled(ClassicGame::Option::AutoPush) || !moving || ClassicInput::gameInputSuppressed
+                || !ClassicGame::Enabled(ClassicGame::Option::AlternateControls) || !*game) return;
+            const auto* actor = static_cast<uint8_t*>(*game) + 14864;
+            if (Read<uint8_t>(actor, 4) != 1 || Read<uint8_t>(actor, 5) > 2) return;
+            pushContact = true;
+            contactYaw = Read<int16_t>(actor, 118);
+        });
         auto reload = hook::pattern("A1 ? ? ? ? 33 C9 25 FF 00 00 00 53 33 DB 8A 0C 85 ? ? ? ? 8B C1 C1 E0 03 8A 98 ? ? ? ? 8B 90");
-        if (reload.size() == 1)
-        {
-            auto* code = reload.get_first<uint8_t>();
-            equipped = Read<uint8_t*>(code, 1);
-            inventory = Read<uint8_t*>(code, 0x12);
-            capacities = Read<uint8_t*>(code, 0x1D);
-            ammoTypes = Read<uint8_t**>(code, 0x23);
-            findItem = reinterpret_cast<decltype(findItem)>(code + 0x31 + Read<int32_t>(code, 0x2D));
-            compactInventory = reinterpret_cast<decltype(compactInventory)>(code + 0x61 + Read<int32_t>(code, 0x5D));
-            setCount = reinterpret_cast<decltype(setCount)>(code + 0x7D + Read<int32_t>(code, 0x79));
-            shReload = safetyhook::create_inline(code, Reload);
-        }
+        auto* code = reload.get_first<uint8_t>();
+        equipped = Read<uint8_t*>(code, 1);
+        inventory = Read<uint8_t*>(code, 0x12);
+        capacities = Read<uint8_t*>(code, 0x1D);
+        ammoTypes = Read<uint8_t**>(code, 0x23);
+        findItem = reinterpret_cast<decltype(findItem)>(code + 0x31 + Read<int32_t>(code, 0x2D));
+        compactInventory = reinterpret_cast<decltype(compactInventory)>(code + 0x61 + Read<int32_t>(code, 0x5D));
+        setCount = reinterpret_cast<decltype(setCount)>(code + 0x7D + Read<int32_t>(code, 0x79));
+        shReload = safetyhook::create_inline(code, Reload);
         auto mapping = hook::pattern("81 C2 ? ? ? ? 89 4C 24 10 83 EA 02 33 DB 49 66 8B 1A 85 C3");
-        if (mapping.size() == 1)
+        // Hook the profile-offset addition, before the mapping loop.
+        // The following instructions contain the loop's backward target;
+        // detouring those would make later iterations enter our jump.
+        shProfile = safetyhook::create_mid(mapping.get_first(), [](SafetyHookContext& ctx)
         {
-            // Hook the profile-offset addition, before the mapping loop.
-            // The following instructions contain the loop's backward target;
-            // detouring those would make later iterations enter our jump.
-            shProfile = safetyhook::create_mid(mapping.get_first(), [](SafetyHookContext& ctx)
-            {
-                if (ClassicGame::GetSettings().hdControls && !(*control & 0x2000)) ctx.edx = 0;
-            });
-        }
+            if (ClassicGame::GetSettings().hdControls && !(*control & 0x2000)) ctx.edx = 0;
+        });
         auto menu = hook::pattern("8B 0D ? ? ? ? 89 35 ? ? ? ? F7 C1 00 00 00 01 74 14 81 E6 00 3C 00 00");
         auto tasks = hook::pattern("8D 04 D2 33 C9 C1 E0 02 66 8B 88 ? ? ? ? 8D B0 ? ? ? ? 49");
         auto titleTask = hook::pattern("A0 ? ? ? ? C6 05 ? ? ? ? 01 A8 40 74 12 A8 08 75 12 24 BF");
         auto saveTask = hook::pattern("8B 0D ? ? ? ? 33 C0 8A 41 08 83 E8 00 74 04 48 74 1A C3 6A 00 E8");
-        if (menu.size() == 1)
+        auto* flags = *menu.get_first<uint32_t*>(2) - 1;
+        ClassicInput::nativeMenu = [flags]() { return (*flags & 0x8000) != 0; };
+        auto* table = *tasks.get_first<uint8_t*>(11);
+        const auto title = uintptr_t(titleTask.get_first());
+        const auto save = uintptr_t(saveTask.get_first());
+        ClassicInput::nativeActionMenu = [flags, table, title, save]()
         {
-            auto* flags = *menu.get_first<uint32_t*>(2) - 1;
-            ClassicInput::nativeMenu = [flags]() { return (*flags & 0x8000) != 0; };
-            if (tasks.size() == 1 && titleTask.size() == 1 && saveTask.size() == 1)
+            if (*flags & 0x8000) return true;
+            // Read active scheduled tasks, not the title's last state:
+            // that state remains allocated after entering gameplay.
+            for (int slot = 0; slot < 8; ++slot)
             {
-                auto* table = *tasks.get_first<uint8_t*>(11);
-                const auto title = uintptr_t(titleTask.get_first());
-                const auto save = uintptr_t(saveTask.get_first());
-                ClassicInput::nativeActionMenu = [flags, table, title, save]()
-                {
-                    if (*flags & 0x8000) return true;
-                    // Read active scheduled tasks, not the title's last state:
-                    // that state remains allocated after entering gameplay.
-                    for (int slot = 0; slot < 8; ++slot)
-                    {
-                        const auto* task = table + 36 * slot;
-                        const auto callback = Read<uintptr_t>(task, 4);
-                        if (Read<uint16_t>(task) && (callback == title || callback == save)) return true;
-                    }
-                    return false;
-                };
+                const auto* task = table + 36 * slot;
+                const auto callback = Read<uintptr_t>(task, 4);
+                if (Read<uint16_t>(task) && (callback == title || callback == save)) return true;
             }
-        }
+            return false;
+        };
         shMovement = safetyhook::create_inline(movement.get_first(), Movement);
     }
 }

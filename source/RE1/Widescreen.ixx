@@ -406,9 +406,6 @@ namespace RE1Presentation
         }
         if (movieFrame.size() == 0)
             movieFrame = hook::pattern("81 EC 00 01 00 00 A1 ? ? ? ? 83 3D ? ? ? ? 00 56 57 0F 84 ? ? ? ? 85 C0 74 1B 83 F8 01");
-        if (mode.size() != 1 || render.size() != 1 || actor.size() != 1 || matrix.size() != 1
-            || sprite.size() != 1 || fonts.size() != 1 || room.size() != 1
-            || background.size() != 1 || task.size() != 1 || taskStart.size() != 1 || title.size() != 1 || inventoryScreen.size() != 1) return;
         const auto display = Presentation::OutputDisplaySize();
         if (!display.width || !display.height) return;
         outputWidth = display.width; outputHeight = display.height;
@@ -425,30 +422,24 @@ namespace RE1Presentation
         shBackground = safetyhook::create_inline(background.get_first(), Background);
         shRender = safetyhook::create_inline(render.get_first(), Render);
         shSprite = safetyhook::create_inline(sprite.get_first(), Sprite);
-        if (movie.size() == 1 && movieId.size() == 1)
+        mainWindow = *movie.get_first<HWND*>(31);
+        movieWindow = *movie.get_first<HWND*>(layout.japanese ? 111 : 105);
+        movieDevice = *movieId.get_first<MCIDEVICEID*>(2);
+        if (const auto library = GetModuleHandleW(L"winmm.dll"))
+            sendMovieCommand = reinterpret_cast<decltype(sendMovieCommand)>(GetProcAddress(library, "mciSendCommandA"));
+        shMovie = safetyhook::create_inline(movie.get_first(), Movie);
+        if (const auto wrapper = GetModuleHandleW(L"ddraw.dll"))
         {
-            mainWindow = *movie.get_first<HWND*>(31);
-            movieWindow = *movie.get_first<HWND*>(layout.japanese ? 111 : 105);
-            movieDevice = *movieId.get_first<MCIDEVICEID*>(2);
-            if (const auto library = GetModuleHandleW(L"winmm.dll"))
-                sendMovieCommand = reinterpret_cast<decltype(sendMovieCommand)>(GetProcAddress(library, "mciSendCommandA"));
-            shMovie = safetyhook::create_inline(movie.get_first(), Movie);
-            if (const auto wrapper = GetModuleHandleW(L"ddraw.dll"))
-            {
-                auto blit = hook::module_pattern(wrapper, "8B 15 ? ? ? ? 50 A1 ? ? ? ? 51 8B 4C 24 34 D1 EA D1 E8 52 50 6A 00 6A 00 51 FF 15 ? ? ? ? 8B 16 8B F8 8B 44 24 1C 50 56 FF 52 68");
-                if (blit.size() == 1) shMovieBlit = safetyhook::create_mid(blit.get_first(28), MovieBlit);
-            }
-            ClassicGame::onSettingsChanged() += []() { Movie(); };
-            if (movieFrame.size() == 1 && flip.size() == 1 && moviePlay.size() == 1 && movieInput.size() == 1)
-            {
-                present = reinterpret_cast<decltype(present)>(flip.get_first());
-                movieFinished = *movieInput.get_first<int*>(55);
-                shMovieInput = safetyhook::create_mid(movieInput.get_first(), MovieInput);
-                shMovieFrame = safetyhook::create_inline(movieFrame.get_first(), MovieFrame);
-                shMoviePlay = safetyhook::create_inline(moviePlay.get_first(), PlayMovie);
-                ClassicMenu::pause.emplace_back(PauseMovie);
-            }
+            auto blit = hook::module_pattern(wrapper, "8B 15 ? ? ? ? 50 A1 ? ? ? ? 51 8B 4C 24 34 D1 EA D1 E8 52 50 6A 00 6A 00 51 FF 15 ? ? ? ? 8B 16 8B F8 8B 44 24 1C 50 56 FF 52 68");
+            if (!blit.empty()) shMovieBlit = safetyhook::create_mid(blit.get_first(28), MovieBlit);
         }
+        ClassicGame::onSettingsChanged() += []() { Movie(); };
+        present = reinterpret_cast<decltype(present)>(flip.get_first());
+        movieFinished = *movieInput.get_first<int*>(55);
+        shMovieInput = safetyhook::create_mid(movieInput.get_first(), MovieInput);
+        shMovieFrame = safetyhook::create_inline(movieFrame.get_first(), MovieFrame);
+        shMoviePlay = safetyhook::create_inline(moviePlay.get_first(), PlayMovie);
+        ClassicMenu::pause.emplace_back(PauseMovie);
     }
 }
 

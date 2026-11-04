@@ -122,7 +122,7 @@ export namespace Game
             return float(120.0 + projected[1] * focal / projected[2]);
         }
 
-        bool Resolve()
+        void Resolve()
         {
             auto playerPattern = hook::pattern("68 ? ? ? ? C7 05 ? ? ? ? ? ? ? ? E8 ? ? ? ? 68 80 00 00 00 68 80 00 00 00");
             auto viewPattern = hook::pattern("BF ? ? ? ? F3 A5 8B 4C 24 4C 8B 70 04 8B 18 8B 69 04");
@@ -140,12 +140,6 @@ export namespace Game
             auto movementPattern = hook::pattern("8B 0D ? ? ? ? 8B 15 ? ? ? ? 56 8B 74 24 08 33 C0 51 8A 46 05 52 56 FF 14 85");
             auto padPattern = hook::pattern("8A 0D ? ? ? ? F7 D0 25 FF FF 00 00 80 F9 07 A3");
             auto stickPattern = hook::pattern("A0 ? ? ? ? 8A 0D ? ? ? ? 88 44 24 11 88 4C 24 13 A0");
-            if (playerPattern.size() != 1 || viewPattern.size() != 1 || cameraPattern.size() != 1
-                || flagsPattern.size() != 1 || controlPattern.size() != 1 || menuPattern.size() != 1
-                || roomPattern.size() != 1 || interfacePattern.size() != 1 || backgroundPattern.size() != 1
-                || modePattern.size() != 1 || movementPattern.size() != 1 || padPattern.size() != 1 || stickPattern.size() != 1)
-                return false;
-
             player = *playerPattern.get_first<void*>(1);
             view = *viewPattern.get_first<void*>(1);
             camera = *cameraPattern.get_first<void*>(1);
@@ -162,18 +156,19 @@ export namespace Game
             padType = *padPattern.get_first<uint8_t*>(2);
             stickX = *stickPattern.get_first<uint8_t*>(1);
             stickY = *stickPattern.get_first<uint8_t*>(7);
-            return true;
         }
     };
 
-    bool Resolve(State& output)
+    void Resolve(State& output)
     {
         // Both features use the same bindings. Resolve once, before either
         // feature replaces the movement entry point used as a signature.
-        static State bindings;
-        static const bool found = bindings.Resolve();
-        if (found)
-            output = bindings;
-        return found;
+        static const State bindings = []()
+        {
+            State state;
+            state.Resolve();
+            return state;
+        }();
+        output = bindings;
     }
 }

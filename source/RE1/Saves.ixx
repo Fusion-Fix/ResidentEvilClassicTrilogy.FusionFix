@@ -86,7 +86,6 @@ export namespace RE1Saves
         auto captions = hook::pattern("? ? ? ? ? ? ? 74 11 6A 00 6A 5D E8 ? ? ? ? 83 C4 08 E9");
         auto demo = hook::pattern("F6 05 ? ? ? ? 10 66 8B 0D ? ? ? ? 89 15 ? ? ? ? 66 A3 ? ? ? ? 66 89 0D");
         auto loaded = hook::pattern("F6 05 ? ? ? ? 10 6A 00 74 0F 6A 5C E8");
-        if (state.size() != 1 || input.size() != 1 || slots.size() != 1 || captions.size() != 1 || loaded.size() != 1 || demo.size() != 1) return;
         title = *state.get_first<uint8_t*>(1);
         japanese = *slots.get_first<uint8_t>(22) == 0xFF; // Japanese picker iterates with EDI and uses .daj saves.
         pressed = *input.get_first<uint32_t*>(2);

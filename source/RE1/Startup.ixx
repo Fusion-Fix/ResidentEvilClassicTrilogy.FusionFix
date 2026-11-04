@@ -52,7 +52,6 @@ namespace RE1Intro
             next = hook::pattern("6A 01 E8 ? ? ? ? 83 C4 04 68 ? ? ? ? E8 ? ? ? ? 83 C4 04 5E 5B C3");
             japanese = true;
         }
-        if (startup.size() != 1 || next.size() != 1 || menu.size() != 1 || state.size() != 1) return;
         title = *state.get_first<uint8_t*>(1);
         logosResume = uintptr_t(next.get_first(japanese ? 10 : 0));
         if (japanese)
@@ -66,37 +65,31 @@ namespace RE1Intro
         {
             auto warning = hook::pattern("68 E0 01 00 00 68 80 02 00 00 E8 ? ? ? ? 83 C4 08 A1");
             auto finishWarning = hook::pattern("C7 05 ? ? ? ? 00 00 00 00 68 F0 00 00 00 68 40 01 00 00 E8 ? ? ? ? 83 C4 08 68 80 00 00 00 68 80 00 00 00 68 80 00 00 00 E8 ? ? ? ? 83 C4 0C");
-            if (warning.size() == 1 && finishWarning.size() == 1)
+            warningResume = uintptr_t(finishWarning.get_first());
+            shWarningSkip = safetyhook::create_mid(warning.get_first(18), [](SafetyHookContext& context)
             {
-                warningResume = uintptr_t(finishWarning.get_first());
-                shWarningSkip = safetyhook::create_mid(warning.get_first(18), [](SafetyHookContext& context)
-                {
-                    if (ClassicGame::Enabled(ClassicGame::Option::SkipIntro)) context.eip = warningResume;
-                });
-                shLogoSkip = safetyhook::create_mid(finishWarning.get_first(51), [](SafetyHookContext& context)
-                {
-                    if (ClassicGame::Enabled(ClassicGame::Option::SkipIntro)) context.eip = logosResume;
-                });
-            }
+                if (ClassicGame::Enabled(ClassicGame::Option::SkipIntro)) context.eip = warningResume;
+            });
+            shLogoSkip = safetyhook::create_mid(finishWarning.get_first(51), [](SafetyHookContext& context)
+            {
+                if (ClassicGame::Enabled(ClassicGame::Option::SkipIntro)) context.eip = logosResume;
+            });
         }
         // The title task queues OU.avi before its first menu frame. Bypass
         // that request too, without changing any later story movie requests.
         auto openingMovie = hook::pattern("39 1D ? ? ? ? 7F ? A1 ? ? ? ? 6A 01 88 1D ? ? ? ? A3 ? ? ? ? C7 05 ? ? ? ? 10 00 00 00 81 0D ? ? ? ? 00 00 04 00 E8 ? ? ? ? 83 C4 04");
-        if (openingMovie.size() == 1)
+        auto* code = openingMovie.get_first<uint8_t>();
+        openingMovieTimer = *reinterpret_cast<int32_t**>(code + 2);
+        openingMovieResume = uintptr_t(code + 8 + *reinterpret_cast<int8_t*>(code + 7));
+        shOpeningMovie = safetyhook::create_mid(code, [](SafetyHookContext& context)
         {
-            auto* code = openingMovie.get_first<uint8_t>();
-            openingMovieTimer = *reinterpret_cast<int32_t**>(code + 2);
-            openingMovieResume = uintptr_t(code + 8 + *reinterpret_cast<int8_t*>(code + 7));
-            shOpeningMovie = safetyhook::create_mid(code, [](SafetyHookContext& context)
+            if (ClassicGame::Enabled(ClassicGame::Option::SkipIntro))
             {
-                if (ClassicGame::Enabled(ClassicGame::Option::SkipIntro))
-                {
-                    // Preserve the timer initialized by the skipped block.
-                    *openingMovieTimer = 16;
-                    context.eip = openingMovieResume;
-                }
-            });
-        }
+                // Preserve the timer initialized by the skipped block.
+                *openingMovieTimer = 16;
+                context.eip = openingMovieResume;
+            }
+        });
         shStartup = safetyhook::create_inline(startup.get_first(), Startup);
         shTitle = safetyhook::create_inline(menu.get_first(), Title);
     }

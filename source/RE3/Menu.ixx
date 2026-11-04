@@ -535,47 +535,30 @@ namespace GameMenu
 
     void Init()
     {
-        if (!Game::Resolve(game)) return;
+        Game::Resolve(game);
         auto windowPattern = hook::pattern("53 55 8B 6C 24 0C 56 8B F1 57 8B 7C 24 18 83 FD 20 8B 5E 28");
         auto scheduler = hook::pattern("56 57 BE ? ? ? ? 8D 7E F0 33 C0 89 3D ? ? ? ? 66 8B 07 48 74 ? 48 74 ? 83 E8 02");
         auto interfacePattern = hook::pattern("E8 ? ? ? ? E8 ? ? ? ? E9 ? ? ? ? 90 A0 ? ? ? ? 56 8B 35 ? ? ? ? A8 08 A0");
         auto texture = hook::pattern("56 8B F1 E8 ? ? ? ? 8B 4C 24 10 8B 44 24 0C 8B 54 24 14 89 4E 0C 8B 4C 24 08 89 46 08");
         auto clock = hook::pattern("6A FF E8 ? ? ? ? 8B 15 ? ? ? ? 8B C8 2B CA 8B 15 ? ? ? ? 83 C4 04 03 D1 89 15 ? ? ? ? A3");
         auto resetGraphics = hook::pattern("56 8B F1 57 33 FF 8B 86 E4 00 00 00 3B C7 74 10 8B 4E 04 3B CF 74 09");
-        if (windowPattern.size() != 1 || scheduler.size() != 1 || interfacePattern.size() != 1 || texture.size() != 1
-            || resetGraphics.size() != 1)
-            return;
         shResetGraphics = safetyhook::create_inline(resetGraphics.get_first(), ResetGraphicsHook);
-        if (!shResetGraphics) return;
         Localization::Init();
         fontPath = ResolveFontPath();
-        // These short archive wrappers occur in several unrelated interfaces.
-        // Resolve the actual calls made by the game's TIM file loader instead
-        // of treating non-unique wrapper signatures as missing functions.
-        auto fileLoader = hook::pattern("53 55 56 8B 74 24 10 57 56 68 ? ? ? ? C6 05 ? ? ? ? 00 33 DB E8 ? ? ? ? 8D 7E 05 53 53 57 E8");
-        for (size_t i = 0; i < fileLoader.size(); ++i)
-        {
-            auto* loader = fileLoader.get(i).get<uint8_t>();
-            // The partial-file reader shares the prologue, but does not seek
-            // to SEEK_END to obtain the complete file's size at this point.
-            if (loader[0x57] == 0x6A && loader[0x58] == SEEK_END && loader[0x22] == 0xE8
-                && loader[0x5C] == 0xE8 && loader[0x76] == 0xE8 && loader[0x98] == 0xE8)
-            {
-                nativeFilePath = *reinterpret_cast<char**>(loader + 10);
-                archiveOpen = reinterpret_cast<decltype(archiveOpen)>(injector::GetBranchDestination(loader + 0x22).as_int());
-                archiveSeek = reinterpret_cast<decltype(archiveSeek)>(injector::GetBranchDestination(loader + 0x5C).as_int());
-                archiveRead = reinterpret_cast<decltype(archiveRead)>(injector::GetBranchDestination(loader + 0x76).as_int());
-                archiveClose = reinterpret_cast<decltype(archiveClose)>(injector::GetBranchDestination(loader + 0x98).as_int());
-                shFontRead = safetyhook::create_inline(loader, FontFileHook);
-                break;
-            }
-        }
+        // The game's TIM file loader. The partial-file reader shares the
+        // prologue, but does not seek to SEEK_END for the complete file size.
+        auto* loader = hook::pattern("53 55 56 8B 74 24 10 57 56 68 ? ? ? ? C6 05 ? ? ? ? 00 33 DB E8 ? ? ? ? 8D 7E 05 53 53 57 E8 "
+            "? ? ? ? 8B F0 83 C4 14 83 FE FF 75 ? 43 83 FB 01 7D ? 6A 00 6A 00 57 E8 ? ? ? ? 8B F0 83 C4 0C 83 FE FF 74 ? "
+            "85 F6 7D ? 5F 5E 5D 83 C8 FF 5B C3 6A 02 6A 00 56 E8").get_first<uint8_t>();
+        nativeFilePath = *reinterpret_cast<char**>(loader + 10);
+        archiveOpen = reinterpret_cast<decltype(archiveOpen)>(injector::GetBranchDestination(loader + 0x22).as_int());
+        archiveSeek = reinterpret_cast<decltype(archiveSeek)>(injector::GetBranchDestination(loader + 0x5C).as_int());
+        archiveRead = reinterpret_cast<decltype(archiveRead)>(injector::GetBranchDestination(loader + 0x76).as_int());
+        archiveClose = reinterpret_cast<decltype(archiveClose)>(injector::GetBranchDestination(loader + 0x98).as_int());
+        shFontRead = safetyhook::create_inline(loader, FontFileHook);
 
-        if (clock.size() == 1)
-        {
-            playTimeAnchor = *clock.get_first<uint32_t*>(9);
-            frameCounter = reinterpret_cast<decltype(frameCounter)>(injector::GetBranchDestination(clock.get_first(2)).as_int());
-        }
+        playTimeAnchor = *clock.get_first<uint32_t*>(9);
+        frameCounter = reinterpret_cast<decltype(frameCounter)>(injector::GetBranchDestination(clock.get_first(2)).as_int());
         createTexture = reinterpret_cast<CreateTexture>(texture.get_first());
         shWindow = safetyhook::create_inline(windowPattern.get_first(), WindowHook);
         shScheduler = safetyhook::create_inline(scheduler.get_first(), SchedulerHook);

@@ -98,8 +98,6 @@ namespace RE2Saves
         auto exit = hook::pattern("A1 ? ? ? ? 8D 04 C0 C1 E0 02 66 C7 80 ? ? ? ? 00 00 C7 80 ? ? ? ? ? ? ? ? C6 80 ? ? ? ? 01 C3");
         auto campaign = hook::pattern("8A 82 04 01 00 00 24 01 3C ? 75 12 C6 05");
         auto claire = hook::pattern("F6 82 04 01 00 00 01 75 16 C6 05 ? ? ? ? 62");
-        if (menu.size() != 1 || slots.size() != 1 || enumeration.size() != 1 || selection.size() != 1
-            || loadMode.size() != 1 || name.size() != 1 || captions.size() != 1 || exit.size() != 1) return;
         title = reinterpret_cast<uint16_t*>(*menu.get_first<uint8_t*>(3) - 1);
         task = *slots.get_first<uint8_t**>(2);
         mode = *slots.get_first<uint8_t*>(43);
@@ -110,9 +108,12 @@ namespace RE2Saves
         flags = *loadMode.get_first<uint32_t*>(13);
         filename = *name.get_first<char**>(2);
         // Read the same campaign test as the native loader (Leon/Claire).
-        if (campaign.size() == 1) incompatibleCampaign = *campaign.get_first<uint8_t>(9);
-        else if (claire.size() == 1) incompatibleCampaign = 0;
-        else return;
+        if (!campaign.empty()) incompatibleCampaign = *campaign.get_first<uint8_t>(9);
+        else
+        {
+            claire.get_first();
+            incompatibleCampaign = 0;
+        }
         directory = PortableSettings::SaveDirectory();
         taskExit = reinterpret_cast<decltype(taskExit)>(exit.get_first());
         ClassicMenu::canLoad = CanLoad;

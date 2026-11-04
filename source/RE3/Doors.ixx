@@ -30,11 +30,8 @@ public:
         {
             auto pattern = hook::pattern("A0 ? ? ? ? 33 DB 3A C3 74 ? BE 00 08 00 00 85 35");
             auto sourceNextPattern = hook::pattern("A0 ? ? ? ? 84 C0 0F 84 ? ? ? ? BE 00 08 00 00 85 35");
-            if (pattern.size() + sourceNextPattern.size() != 1)
-                return;
-
             // Bypass animation playback; retain native setup, loading and cleanup.
-            if (pattern.size())
+            if (!pattern.empty())
             {
                 DoorSkip::branch = pattern.get_first<uint8_t>(9);
                 DoorSkip::length = 1;

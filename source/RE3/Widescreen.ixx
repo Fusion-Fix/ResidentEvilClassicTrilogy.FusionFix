@@ -470,8 +470,7 @@ namespace PanAndScan
 
     static void Init()
     {
-        if (!Game::Resolve(game))
-            return;
+        Game::Resolve(game);
 
         auto rendererPattern = hook::pattern("C7 06 ? ? ? ? 89 BE ? CC 10 00 68 E0 01 00 00 68 80 02 00 00");
         auto nextPattern = hook::pattern("8B 51 0C 8B 41 08 3B D0 72 05 33 C0 C2 04 00 56 8B 32 8D 42 04 8D 54 32 04");
@@ -483,11 +482,6 @@ namespace PanAndScan
         auto scoreModePattern = hook::pattern("53 55 8B 6C 24 0C 57 8B 45 08 85 C0 74 0B 8B 48 54 8B 78 0C 8B 40 08 EB 09");
         auto movieTickPattern = hook::pattern("A1 ? ? ? ? 25 FF 00 00 00 FF 14 85 ? ? ? ? A1 ? ? ? ? F6 C4 80 74");
         auto storyPattern = hook::pattern("51 53 55 56 57 BE ? ? ? ? BB ? ? ? ? C7 44 24 10 02 00 00 00 BF ? ? ? ? BD ? ? ? ? 56 E8");
-        if (storyPattern.size() != 1 || rendererPattern.size() != 1 || nextPattern.size() != 1 || flatPattern.size() != 1
-            || texturedPattern.size() != 1 || endPattern.size() != 1 || readVideoPattern.size() != 1
-            || acceptModePattern.size() != 1 || scoreModePattern.size() != 1 || movieTickPattern.size() != 1)
-            return;
-
         auto* renderer = *rendererPattern.get_first<uintptr_t*>(2);
         const auto display = Presentation::OutputDisplaySize();
         if (!display.width || !display.height) return;

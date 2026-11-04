@@ -471,8 +471,7 @@ namespace WobbleFix
 
     void Init()
     {
-        // Resolve everything before installing any hooks. Missing or ambiguous
-        // patterns leave the game untouched, including an active REbirth patch.
+        // Resolve everything before installing any hooks.
         auto modelPattern = hook::pattern("81 EC B4 02 00 00 8B 84 24 BC 02 00");
         auto skinnedPattern = hook::pattern("81 EC B4 02 00 00 8B 0D ? ? ? ?");
         auto objectPattern = hook::pattern("81 EC B4 02 00 00 8B 8C 24 B8 02 00");
@@ -492,27 +491,6 @@ namespace WobbleFix
         // Japanese Steam builds move a trailing renderer flag by eight bytes;
         // the vtable, packet queue, vertex buffer and XY scales are unchanged.
         auto rendererPattern = hook::pattern("C7 06 ? ? ? ? 89 BE ? CC 10 00 68 E0 01 00 00 68 80 02 00 00");
-        if (modelPattern.size() != 1
-            || skinnedPattern.size() != 1
-            || objectPattern.size() != 1
-            || stagePattern.size() != 1
-            || floorPattern.size() != 1
-            || trianglePattern.size() != 1
-            || quadPattern.size() != 1
-            || subdividePattern.size() != 1
-            || floorDetailPattern.size() != 1
-            || blendPattern.size() != 1
-            || flattenedBlendPattern.size() != 1
-            || queueTrianglePattern.size() != 1
-            || queueQuadPattern.size() != 1
-            || resetQueuePattern.size() != 1
-            || submitScenePattern.size() != 1
-            || gtePattern.size() != 1
-            || rendererPattern.size() != 1)
-        {
-            return;
-        }
-
         auto* gte = *gtePattern.get_first<uintptr_t*>(2);
         auto* renderer = *rendererPattern.get_first<uintptr_t*>(2);
 

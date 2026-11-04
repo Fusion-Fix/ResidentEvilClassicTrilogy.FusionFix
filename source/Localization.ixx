@@ -49,61 +49,32 @@ export namespace Localization
 
     void Init()
     {
+        // The localized asset paths identify the executable's language.
         language = "american";
-        wchar_t executable[MAX_PATH]{};
-        GetModuleFileNameW(nullptr, executable, MAX_PATH);
-        auto folder = std::filesystem::path(executable).parent_path().filename().wstring();
-        std::transform(folder.begin(), folder.end(), folder.begin(), towlower);
-        for (const auto* name : { "french", "german", "italian", "spanish", "japanese" })
-            if (folder == Decode(name)) language = name;
-        auto filename = std::filesystem::path(executable).filename().wstring();
-        std::transform(filename.begin(), filename.end(), filename.begin(), towlower);
-        if (filename.starts_with(L"bio3_pc") || filename.starts_with(L"biohazard"))
-            language = "japanese";
-        // RE2's character executables carry the language in their suffix.
-        if (filename.starts_with(L"leon") || filename.starts_with(L"claire"))
+        auto pattern = hook::pattern("63 6F 6D 6D 6F 6E 5C 64 61 74 ? 5C 67 77 61 72 6E 69 6E 67 2E 61 64 74 00");
+        if (!pattern.empty())
         {
-            const auto stem = std::filesystem::path(filename).stem().wstring();
-            switch (stem.back())
+            switch (*pattern.get_first<char>(10))
             {
-                case L'f': language = "french"; break;
-                case L'g': language = "german"; break;
-                case L'i': language = "italian"; break;
-                case L's': language = "spanish"; break;
-                case L'j': language = "japanese"; break;
-                case L'u': language = "american"; break;
-            }
-        }
-        auto warning2 = hook::pattern("63 6F 6D 6D 6F 6E 5C 64 61 74 ? 5C 67 77 61 72 6E 69 6E 67 2E 61 64 74 00");
-        if (warning2.size() == 1)
-        {
-            switch (*warning2.get_first<char>(10))
-            {
-                case 'u': language = "american"; break;
                 case 'f': language = "french"; break;
                 case 'g': language = "german"; break;
                 case 'i': language = "italian"; break;
                 case 's': language = "spanish"; break;
-                case 'j': language = "japanese"; break;
+                case 'a': language = "japanese"; break;
             }
         }
-        auto assets1 = hook::pattern("2E 5C ? ? ? 5C 64 61 74 61 5C 69 74 65 6D 5F 6D 69 78 2E 70 69 78 00");
-        if (assets1.size() == 1)
+        else if (pattern = hook::pattern("2E 5C ? ? ? 5C 64 61 74 61 5C 69 74 65 6D 5F 6D 69 78 2E 70 69 78 00"); !pattern.empty())
         {
-            const std::string_view code(assets1.get_first<char>(2), 3);
-            if (code == "usa") language = "american";
-            else if (code == "fra") language = "french";
+            const std::string_view code(pattern.get_first<char>(2), 3);
+            if (code == "fra") language = "french";
             else if (code == "ger") language = "german";
             else if (code == "jpn") language = "japanese";
         }
-        // The localized warning asset identifies the executable's language,
-        // even when the user moves it out of its Steam language folder.
-        auto warning = hook::pattern("62 69 6F 31 39 2F 64 61 74 61 5F ? 2F 65 74 63 32 2F 57 61 72 6E ? 2E 74 69 6D 00");
-        if (warning.size() == 1)
+        else
         {
-            switch (*warning.get_first<char>(11))
+            pattern = hook::pattern("62 69 6F 31 39 2F 64 61 74 61 5F ? 2F 65 74 63 32 2F 57 61 72 6E ? 2E 74 69 6D 00");
+            switch (*pattern.get_first<char>(11))
             {
-                case 'u': language = "american"; break;
                 case 'f': language = "french"; break;
                 case 'g': language = "german"; break;
                 case 'i': language = "italian"; break;

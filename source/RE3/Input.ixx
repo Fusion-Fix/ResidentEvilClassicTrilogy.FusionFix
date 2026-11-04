@@ -179,46 +179,42 @@ namespace ControllerInput
         auto packet = hook::pattern("8B 15 ? ? ? ? 33 F6 89 15 ? ? ? ? 89 35 ? ? ? ? B9 01 00 00 00 33 DB 66 8B 1F 85 D8");
         auto raw = hook::pattern("8A 0D ? ? ? ? F7 D0 25 FF FF 00 00 80 F9 07 A3");
         auto mapping = hook::pattern("A0 ? ? ? ? 8B F8 A1 ? ? ? ? C1 E7 05 81 C7 ? ? ? ? 8B E8");
-        if (packet.size() == 1 && raw.size() == 1 && mapping.size() == 1 && keyboard.size() == 1 && Game::Resolve(Input::game))
+        Game::Resolve(Input::game);
+        rawHeld = *raw.get_first<uint32_t*>(17);
+        profile = *mapping.get_first<uint16_t*>(17);
+        shKeyboard = safetyhook::create_inline(keyboard.get_first(), KeyboardPollHook);
+        shPacket = safetyhook::create_mid(packet.get_first(), [](SafetyHookContext& ctx)
         {
-            rawHeld = *raw.get_first<uint32_t*>(17);
-            profile = *mapping.get_first<uint16_t*>(17);
-            shKeyboard = safetyhook::create_inline(keyboard.get_first(), KeyboardPollHook);
-            shPacket = safetyhook::create_mid(packet.get_first(), [](SafetyHookContext& ctx)
+            if (*Input::game.flags & 0x10000000) return; // recorded demo input
+            const auto pad = Input::GetPad();
+            auto input = Input::HDState();
+            if (Game::GetSettings().hdControls)
             {
-                if (*Input::game.flags & 0x10000000) return; // recorded demo input
-                const auto pad = Input::GetPad();
-                auto input = Input::HDState();
-                if (Game::GetSettings().hdControls)
+                const bool movie = (*Input::game.flags & 0x10000) != 0;
+                uint32_t legacy = 0;
+                if (pad.connected && !pad.xinput)
                 {
-                    const bool movie = (*Input::game.flags & 0x10000) != 0;
-                    uint32_t legacy = 0;
-                    if (pad.connected && !pad.xinput)
-                    {
-                        // Translate the controller's selected native profile
-                        // into the default packet used by remaster bindings.
-                        const auto* nativeProfile = reinterpret_cast<const uint16_t*>(ctx.edi);
-                        for (int i = 0; i < 16; ++i)
-                            if (ctx.eax & nativeProfile[i]) legacy |= profile[i];
-                    }
-                    ctx.eax = movie && !movieInputReady ? 0
-                        : HDControls::Native(input, 3, Input::InNativeMenu(), movie) | legacy;
-                    ctx.edi = uintptr_t(profile);
-                    // Native analog steering must not remove freshly mapped
-                    // left/right packet bits later in this function.
-                    *reinterpret_cast<uint8_t*>(ctx.esp + 0x12) = 0;
+                    // Translate the controller's selected native profile
+                    // into the default packet used by remaster bindings.
+                    const auto* nativeProfile = reinterpret_cast<const uint16_t*>(ctx.edi);
+                    for (int i = 0; i < 16; ++i)
+                        if (ctx.eax & nativeProfile[i]) legacy |= profile[i];
                 }
-                if (Input::suppressUntilRelease)
-                {
-                    if (!ctx.eax && !input.Any()) Input::suppressUntilRelease = false;
-                    ctx.eax = 0;
-                }
-                *rawHeld = ctx.eax;
-            });
-        }
+                ctx.eax = movie && !movieInputReady ? 0
+                    : HDControls::Native(input, 3, Input::InNativeMenu(), movie) | legacy;
+                ctx.edi = uintptr_t(profile);
+                // Native analog steering must not remove freshly mapped
+                // left/right packet bits later in this function.
+                *reinterpret_cast<uint8_t*>(ctx.esp + 0x12) = 0;
+            }
+            if (Input::suppressUntilRelease)
+            {
+                if (!ctx.eax && !input.Any()) Input::suppressUntilRelease = false;
+                ctx.eax = 0;
+            }
+            *rawHeld = ctx.eax;
+        });
         auto pattern = hook::pattern("51 8B 81 74 0D 0A 00 53 55 33 ED 56 57 85 C0 89 4C 24 10 7E 57 8D B1 54 01 00 00");
-        if (pattern.size() != 1)
-            return;
         for (const auto* name : { L"xinput1_4.dll", L"xinput1_3.dll", L"xinput9_1_0.dll" })
             if (const auto library = LoadLibraryExW(name, nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32))
             {

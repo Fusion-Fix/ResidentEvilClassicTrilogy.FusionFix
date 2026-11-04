@@ -23,7 +23,6 @@ namespace RE2Doors
     {
         auto playback = hook::pattern("A1 ? ? ? ? 53 33 DB 80 78 09 01 74 ? F7 05 ? ? ? ? 00 00 01 00 74 ? 6A 01 E8");
         auto active = hook::pattern("38 1D ? ? ? ? 0F 84 ? ? ? ? F7 05 ? ? ? ? 00 00 02 00 75");
-        if (playback.size() != 1 || active.size() != 1) return;
         playing = *active.get_first<uint8_t*>(2);
         shPlayback = safetyhook::create_inline(playback.get_first(), Playback);
     }

@@ -13,6 +13,7 @@ import RE2Saves;
 
 void Init()
 {
+    PortableSettings::InitAssets();
     FixOverlay::Init();
     Localization::Init();
     FusionFix::onInitEvent().executeAll();

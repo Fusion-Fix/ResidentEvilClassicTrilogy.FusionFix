@@ -42,15 +42,13 @@ namespace RE2Intro
     void Init()
     {
         auto warning = hook::pattern("8B 0D ? ? ? ? 33 C0 8A 41 08 83 F8 06 77 ? FF 24 85");
-        if (warning.size() != 1)
+        if (warning.empty())
             warning = hook::pattern("8B 0D ? ? ? ? 33 C0 8A 41 08 83 F8 07 77 ? FF 24 85");
         auto title = hook::pattern("8B 0D ? ? ? ? 33 C0 8A 41 09 83 F8 09 0F 87 ? ? ? ? FF 24 85");
         auto handshake = hook::pattern("C6 05 ? ? ? ? 01 E8 ? ? ? ? 83 C4 08 6A 04 68 ? ? ? ? 68");
         auto introMovie = hook::pattern("A0 ? ? ? ? 84 C0 75 ? 6A 00 E8 ? ? ? ? 8B 0D ? ? ? ? 83 C4 04 C6 41 09 08");
         auto exit = hook::pattern("A1 ? ? ? ? 8D 04 C0 C1 E0 02 66 C7 80 ? ? ? ? 00 00 C7 80 ? ? ? ? ? ? ? ? C6 80 ? ? ? ? 01 C3");
         auto wait = hook::pattern("A1 ? ? ? ? 66 8B 4C 24 04 8D 04 C0 C1 E0 02 66 89 88 ? ? ? ? B9 01 00 00 00");
-        if (warning.size() != 1 || title.size() != 1 || handshake.size() != 1
-            || introMovie.size() != 1 || exit.size() != 1 || wait.size() != 1) return;
         task = *warning.get_first<uint8_t**>(2);
         busy = *handshake.get_first<uint8_t*>(2);
         movie = *introMovie.get_first<uint8_t*>(1);

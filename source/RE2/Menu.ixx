@@ -38,19 +38,14 @@ namespace RE2Menu
         ClassicMenu::style = 2;
         auto frame = hook::pattern("A1 ? ? ? ? 85 C0 75 0F E8 ? ? ? ? C7 05 ? ? ? ? 01 00 00 00 A1 ? ? ? ? C6 05 ? ? ? ? 00 8B C8 8B D0");
         auto window = hook::pattern("8B 0D ? ? ? ? 55 8B 6C 24 14 56 8B 74 24 10 57 8B 7C 24 18 85 C9 74 1D");
-        if (frame.size() != 1 || window.size() != 1) return;
         shWindow = safetyhook::create_inline(window.get_first(), Window);
         shMain = safetyhook::create_inline(frame.get_first(), Main);
         auto movie = hook::pattern("E8 ? ? ? ? 0F BE 05 ? ? ? ? 48 83 F8 04 0F 87 ? ? ? ? FF 24 85");
-        if (movie.size() != 1)
+        if (movie.empty())
             movie = hook::pattern("51 55 56 57 E8 ? ? ? ? 0F BE 05 ? ? ? ? 48 C7 44 24 0C FF FF FF FF 83 F8 04 0F 87 ? ? ? ? FF 24 85");
-        if (movie.size() == 1) shMovie = safetyhook::create_inline(movie.get_first(), Movie);
-        auto clock = hook::pattern("FF 15 ? ? ? ? 8D 0C 80 A3 ? ? ? ? D1 E1 89 0D ? ? ? ? A3 ? ? ? ? C3");
-        if (clock.size() == 1)
-        {
-            const auto reset = reinterpret_cast<void(__cdecl*)()>(clock.get_first());
-            ClassicMenu::pause.emplace_back([reset](bool active) { if (!active) reset(); });
-        }
+        shMovie = safetyhook::create_inline(movie.get_first(), Movie);
+        const auto reset = hook::pattern("FF 15 ? ? ? ? 8D 0C 80 A3 ? ? ? ? D1 E1 89 0D ? ? ? ? A3 ? ? ? ? C3").get_first<void __cdecl()>();
+        ClassicMenu::pause.emplace_back([reset](bool active) { if (!active) reset(); });
     }
 }
 

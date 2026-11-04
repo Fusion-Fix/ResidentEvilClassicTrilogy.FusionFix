@@ -507,20 +507,17 @@ namespace RE2Presentation
         auto actor = hook::pattern("A1 ? ? ? ? 83 C7 04 3B B8 4C 21 00 00 75 ? 8D B0 10 3A 00 00");
         auto matrix = hook::pattern("BF ? ? ? ? F3 A5 8B 4C 24 4C 8B 70 04 8B 18 8B 69 04");
         auto font = hook::pattern("8B 44 24 08 8B 0D ? ? ? ? 53 56 83 F8 29 57 8B F1 72 06 33 C0 5F 5E 5B C3 8D 3C 40 C1 E7 02 8B 87 ? ? ? ?");
-        if (font.size() != 1)
+        if (font.empty())
             font = hook::pattern("8B 44 24 08 8B 0D ? ? ? ? 53 56 83 F8 28 57 8B F1 72 06 33 C0 5F 5E 5B C3 8D 3C 40 C1 E7 02 8B 87 ? ? ? ?");
         auto state = hook::pattern("83 EC 58 56 57 8B 7C 24 64 8B F1 8B 47 04 F6 C4 20 74 12 8B 47 1C 89 86 B8 5A 00 00");
         auto frame = hook::pattern("56 8B F1 8B 86 C4 5A 00 00 85 C0 0F 85 ? ? ? ? 8B 86 CC 5F 00 00 F6 C4 02 0F 84");
         auto movie = hook::pattern("81 EC 24 04 00 00 53 55 56 57 8B F1 E8 ? ? ? ? 8B 9C 24 38 04 00 00 8B 2D");
         // The German game wrapper replaces the first native call with a jump.
-        if (movie.size() != 1)
+        if (movie.empty())
             movie = hook::pattern("81 EC 24 04 00 00 53 55 56 57 8B F1 E9 ? ? ? ? 8B 9C 24 38 04 00 00 8B 2D");
         auto movieClose = hook::pattern("56 57 8B F1 E8 ? ? ? ? 8B 86 94 00 00 00 BF 00 00 00 00 83 E0 08 89 BE 98 00 00 00");
         auto text = hook::pattern("A1 ? ? ? ? 83 EC 30 85 C0 53 55 56 57 0F 84 ? ? ? ? A1 ? ? ? ? 8D 54 24 10 52 8B 80 50 5F 00 00 50 8B 08 FF 51 44");
         auto textScale = hook::pattern("A0 ? ? ? ? 8B 4C 24 28 84 C0 74 ? 81 F9 40 02 00 00");
-        if (mode.size() != 1 || render.size() != 1 || packet.size() != 1 || background.size() != 1
-            || blit.size() != 1 || line.size() != 1 || actor.size() != 1 || matrix.size() != 1 || font.size() != 1
-            || state.size() != 1 || frame.size() != 1) return;
         const auto display = Presentation::OutputDisplaySize();
         if (!display.width || !display.height) return;
         outputWidth = display.width; outputHeight = display.height;
@@ -537,20 +534,14 @@ namespace RE2Presentation
         shRender = safetyhook::create_inline(render.get_first(), Render);
         shFrame = safetyhook::create_inline(frame.get_first(), Frame);
         auto gallery = hook::pattern("A1 ? ? ? ? 8B 0D ? ? ? ? 8B 15 ? ? ? ? A3 ? ? ? ? 33 C0 89 0D ? ? ? ? 8A 42 08 83 E8 00");
-        if (gallery.size() == 1) shGallery = safetyhook::create_inline(gallery.get_first(), Gallery);
-        if (text.size() == 1 && textScale.size() == 1)
-        {
-            textRenderer = *text.get_first<void**>(21);
-            textResolution = *textScale.get_first<uint8_t*>(1);
-            shText = safetyhook::create_inline(text.get_first(), Text);
-        }
-        if (movie.size() == 1 && movieClose.size() == 1)
-        {
-            shMovieClose = safetyhook::create_inline(movieClose.get_first(), CloseMovie);
-            shMovie = safetyhook::create_inline(movie.get_first(), Movie);
-            ClassicMenu::pause.emplace_back(PauseMovie);
-            ClassicGame::onSettingsChanged() += []() { if (liveMovie) PositionMovie(liveMovie, liveMovieWindow); };
-        }
+        shGallery = safetyhook::create_inline(gallery.get_first(), Gallery);
+        textRenderer = *text.get_first<void**>(21);
+        textResolution = *textScale.get_first<uint8_t*>(1);
+        shText = safetyhook::create_inline(text.get_first(), Text);
+        shMovieClose = safetyhook::create_inline(movieClose.get_first(), CloseMovie);
+        shMovie = safetyhook::create_inline(movie.get_first(), Movie);
+        ClassicMenu::pause.emplace_back(PauseMovie);
+        ClassicGame::onSettingsChanged() += []() { if (liveMovie) PositionMovie(liveMovie, liveMovieWindow); };
     }
 }
 

@@ -175,7 +175,6 @@ namespace RE1Controls
         auto matrix = hook::pattern("68 ? ? ? ? 03 C2 68 ? ? ? ? C1 F8 02 8D 4C 24 ? 66 89 44 24 ? 51 E8");
         auto scripted = hook::pattern("F6 05 ? ? ? ? 10 66 8B 0D ? ? ? ? 89 15 ? ? ? ? 66 A3 ? ? ? ? 66 89 0D");
         auto permission = hook::pattern("F6 05 ? ? ? ? 20 75 ? F6 05 ? ? ? ? 01 75 ? B8 00 C0 00 00 66 21 05 ? ? ? ? 66 21 05");
-        if (movement.size() != 1 || buttons.size() != 1 || actor.size() != 1 || matrix.size() != 1 || scripted.size() != 1 || permission.size() != 1) return;
         held = *buttons.get_first<uint16_t*>(4);
         pressed = held + 1;
         yaw = *movement.get_first<int16_t*>(24);
@@ -185,28 +184,22 @@ namespace RE1Controls
         taskFlags = reinterpret_cast<uint16_t*>(*permission.get_first<uint8_t*>(11) - 1);
         previousHeld = *scripted.get_first<uint16_t*>(22);
         auto reload = hook::pattern("83 EC 04 A0 ? ? ? ? 04 09 33 C9 88 44 24 00 53 33 C0 88 4C 24 07 A0 ? ? ? ? 8A 14 85");
-        if (reload.size() == 1)
-        {
-            auto* code = reload.get_first<uint8_t>();
-            capacities = Read<uint8_t*>(code, 0x1F);
-            inventory = Read<uint8_t**>(code, 0x45);
-            equipped = Read<uint8_t*>(code, 0x79);
-            compactInventory = reinterpret_cast<decltype(compactInventory)>(code + 0xC8 + Read<int32_t>(code, 0xC4));
-            shReload = safetyhook::create_inline(code, Reload);
-        }
+        auto* code = reload.get_first<uint8_t>();
+        capacities = Read<uint8_t*>(code, 0x1F);
+        inventory = Read<uint8_t**>(code, 0x45);
+        equipped = Read<uint8_t*>(code, 0x79);
+        compactInventory = reinterpret_cast<decltype(compactInventory)>(code + 0xC8 + Read<int32_t>(code, 0xC4));
+        shReload = safetyhook::create_inline(code, Reload);
         auto mapping = hook::pattern("8B 34 8D ? ? ? ? B1 10 FE C9 33 C0 8A C1 66 8B 04 46");
-        if (mapping.size() == 1)
+        // Select the profile before loading its table. The following
+        // instructions include the native loop's backward branch target.
+        shProfile = safetyhook::create_mid(mapping.get_first(), [](SafetyHookContext& ctx)
         {
-            // Select the profile before loading its table. The following
-            // instructions include the native loop's backward branch target.
-            shProfile = safetyhook::create_mid(mapping.get_first(), [](SafetyHookContext& ctx)
-            {
-                if (ClassicGame::GetSettings().hdControls && !(*control & 0x10000000)) ctx.ecx = 0;
-            });
-        }
+            if (ClassicGame::GetSettings().hdControls && !(*control & 0x10000000)) ctx.ecx = 0;
+        });
         shMovement = safetyhook::create_inline(movement.get_first(), Movement);
         auto push = hook::pattern("83 EC 14 A1 ? ? ? ? C7 44 24 04 00 00 00 00 C7 44 24 00 00 00 00 00 80 78 02 00 53 56 57 55");
-        if (push.size() == 1) shPush = safetyhook::create_inline(push.get_first(), Push);
+        shPush = safetyhook::create_inline(push.get_first(), Push);
     }
 }
 

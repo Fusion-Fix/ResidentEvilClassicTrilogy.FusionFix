@@ -220,15 +220,13 @@ namespace SaveHooks
 
     void Init()
     {
-        if (!Game::Resolve(game)) return;
+        Game::Resolve(game);
         auto title = hook::pattern("8B 4C 24 04 51 8A 41 0F 04 04 88 41 0F 25 FF 00 00 00 0F BE 90 ? ? ? ? B8 56 55 55 55");
         auto card = hook::pattern("56 8B 74 24 08 C6 46 07 02 A1 ? ? ? ? F6 C4 10 75 ? 8B 0D ? ? ? ? F6 C5 08");
         auto load = hook::pattern("53 56 8B 74 24 0C 33 C0 32 DB 8A 46 0E 88 5E 07 50 88 5E 13 E8");
         auto save = hook::pattern("53 56 8B 74 24 0C 6A 28 8A 46 0A 88 46 04 8B 0D ? ? ? ? 51 68 ? ? ? ? E8");
         auto captions = hook::pattern("51 33 C0 C6 05 ? ? ? ? 01 A0 ? ? ? ? 83 F8 03 77 ? FF 24 85");
         auto exit = hook::pattern("56 8B 35 ? ? ? ? 66 C7 06 00 00 E8 ? ? ? ? 8B 46 08 50 E8 ? ? ? ? E8 ? ? ? ? 68 00 00 00 FF");
-        if (title.size() != 1 || card.size() != 1 || load.size() != 1 || save.size() != 1 || captions.size() != 1 || exit.size() != 1)
-            return;
         captionBusy = *captions.get_first<uint8_t*>(5);
         captionKind = *captions.get_first<uint8_t*>(11);
         taskExit = reinterpret_cast<decltype(taskExit)>(exit.get_first());

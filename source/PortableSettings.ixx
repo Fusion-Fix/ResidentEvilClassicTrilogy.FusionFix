@@ -460,13 +460,17 @@ export namespace PortableSettings
                 for (auto* installed : hooks) installed->reset();
                 return false;
             }
-        if (game == 2)
-        {
-            auto pattern = hook::pattern("81 EC 08 02 00 00 8D 84 24 04 01 00 00 53 55 56 57 50 68 00 01 00 00");
-            if (pattern.size() == 1)
-                state.assets = safetyhook::create_inline(pattern.get_first(), NativeSettings::Assets);
-        }
         state.initialized = true;
         return true;
+    }
+
+    // RE2's local data probe, once the game's code is present
+    void InitAssets()
+    {
+        auto& state = NativeSettings::State();
+        const std::lock_guard lock(state.mutex);
+        if (!state.initialized) return;
+        auto pattern = hook::pattern("81 EC 08 02 00 00 8D 84 24 04 01 00 00 53 55 56 57 50 68 00 01 00 00");
+        state.assets = safetyhook::create_inline(pattern.get_first(), NativeSettings::Assets);
     }
 }

@@ -2,6 +2,7 @@ module;
 #include <common.hxx>
 #include <sstream>
 #include <unordered_map>
+#include "AssetPathSearch.hxx"
 #include "resources/MenuText.h"
 
 export module Localization;
@@ -49,39 +50,7 @@ export namespace Localization
 
     void Init()
     {
-        // The localized asset paths identify the executable's language.
-        language = "american";
-        auto pattern = hook::pattern("63 6F 6D 6D 6F 6E 5C 64 61 74 ? 5C 67 77 61 72 6E 69 6E 67 2E 61 64 74 00");
-        if (!pattern.empty())
-        {
-            switch (*pattern.get_first<char>(10))
-            {
-                case 'f': language = "french"; break;
-                case 'g': language = "german"; break;
-                case 'i': language = "italian"; break;
-                case 's': language = "spanish"; break;
-                case 'a': language = "japanese"; break;
-            }
-        }
-        else if (pattern = hook::pattern("2E 5C ? ? ? 5C 64 61 74 61 5C 69 74 65 6D 5F 6D 69 78 2E 70 69 78 00"); !pattern.empty())
-        {
-            const std::string_view code(pattern.get_first<char>(2), 3);
-            if (code == "fra") language = "french";
-            else if (code == "ger") language = "german";
-            else if (code == "jpn") language = "japanese";
-        }
-        else
-        {
-            pattern = hook::pattern("62 69 6F 31 39 2F 64 61 74 61 5F ? 2F 65 74 63 32 2F 57 61 72 6E ? 2E 74 69 6D 00");
-            switch (*pattern.get_first<char>(11))
-            {
-                case 'f': language = "french"; break;
-                case 'g': language = "german"; break;
-                case 'i': language = "italian"; break;
-                case 's': language = "spanish"; break;
-                case 'j': language = "japanese"; break;
-            }
-        }
+        language = AssetPaths::Language(GetModuleHandleW(nullptr));
         strings.clear();
         ReadResource(IDR_MENU_AMERICAN);
         constexpr std::pair<std::string_view, int> translations[] = {

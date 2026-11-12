@@ -27,6 +27,8 @@ foreach ($destination in $destinations) {
     Copy-Item -LiteralPath $loader -Destination (Join-Path $destination $loaderName)
     Copy-Item -LiteralPath $plugin -Destination $pluginDirectory
     if ($hub) { Copy-Item -LiteralPath $hub -Destination $destination }
+    # Developer builds: an empty CrashDumps folder next to the loader makes it write crash dumps there
+    if ($env:WFP_CRASH_DUMPS -eq 'on') { New-Item -ItemType Directory -Force -Path (Join-Path $destination 'CrashDumps') | Out-Null }
 }
 $output = Join-Path $PSScriptRoot "releases/$name.$Store.zip"
 New-Item -ItemType Directory -Force -Path (Split-Path $output -Parent) | Out-Null

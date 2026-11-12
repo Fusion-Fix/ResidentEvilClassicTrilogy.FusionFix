@@ -152,6 +152,7 @@ jobs:
       env:
         CODE_SIGNING_PFX: ${{ github.ref_name == 'main' && (github.event_name == 'push' || github.event.inputs.release == 'true') && secrets.CODE_SIGNING_PFX || '' }}
         CODE_SIGNING_PASSWORD: ${{ github.ref_name == 'main' && (github.event_name == 'push' || github.event.inputs.release == 'true') && secrets.CODE_SIGNING_PASSWORD || '' }}
+        WFP_CRASH_DUMPS: ${{ github.event.inputs.release != 'true' && 'on' || 'off' }}
 
     - name: Install artifact client
       run: npm install --no-save --package-lock=false @actions/artifact

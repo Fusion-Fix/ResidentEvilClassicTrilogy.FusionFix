@@ -151,12 +151,14 @@ namespace NativeSettings
     {
         auto& state = State();
         const auto path = Path(key, subkey);
-        if (path != state.key) return false;
-        if (path == state.key) SetCurrentDirectoryW(state.root.c_str());
+        // Japanese Steam RE2 opens STEAM_BIO2. Both regional names use the same
+        // portable profile; never let that native query reach machine paths.
+        if (path != state.key && !(state.game == 2 && path == L"software\\capcom\\steam_bio2")) return false;
+        SetCurrentDirectoryW(state.root.c_str());
         if (result)
         {
             *result = reinterpret_cast<HKEY>(++state.nextHandle);
-            state.handles.emplace(*result, path);
+            state.handles.emplace(*result, state.key);
         }
         return true;
     }

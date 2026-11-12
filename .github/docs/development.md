@@ -78,4 +78,4 @@ The settings descriptions are published to fusionfix.io with the run's GitHub Ac
 
 The public overview lives in `readme.md`. `.github/docs/release.md` contains the matching GitHub Release body and is passed to the release action through `bodyFile`. Keep feature descriptions, installation steps, defaults, and limitations in sync. The support block belongs at the top of the README and the bottom of the release body.
 
-README showcase images use repository-relative paths. The release body uses absolute raw GitHub URLs so images resolve on release pages. Add the planned animated WebP files under `.github/docs/video/` before publishing; see the [capture checklist](video/README.md).
+README showcase images use repository-relative paths. The release body uses absolute raw GitHub URLs so images resolve on release pages. The animated WebP files are in `.github/docs/video/`.

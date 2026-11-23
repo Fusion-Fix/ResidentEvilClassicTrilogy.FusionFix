@@ -39,7 +39,7 @@ Build all six Release configurations, then run `release.bat` to embed symbols, s
 
 To package only RE3, run `powershell -File release.ps1 -Game RE3`.
 
-Extract the archive for your game/store into its installation root. Steam archives contain the appropriate language folders with `version.dll` and `FusionFixHub.exe` beside each executable and the ASI in its `plugins/` subfolder. All menu languages and English fallback text are embedded in the ASI. GOG archives contain root `dsound.dll` and `FusionFixHub.exe`, and the ASI in `plugins/`. The archives contain no settings file: the plugin writes `<plugin>.cfg` with the defaults on the first start. RE2's Leon and Claire share the same installation and plugin. Package contents are defined by `games.json`; no installation paths are included.
+Extract the archive for your game/store into its installation root. Steam archives contain the appropriate language folders with `version.dll` beside each executable and the ASI in its `plugins/` subfolder. All menu languages and English fallback text are embedded in the ASI. GOG archives contain root `dsound.dll` and the ASI in `plugins/`. No archive contains `FusionFixHub.exe`; it is distributed through fusionfix.io only. The archives contain no settings file: the plugin writes `<plugin>.cfg` with the defaults on the first start. RE2's Leon and Claire share the same installation and plugin. Package contents are defined by `games.json`; no installation paths are included.
 
 Native implementation files are isolated in `source/RE1`, `source/RE2`, and `source/RE3`; shared helpers and modules are compiled across all projects.
 
@@ -68,7 +68,6 @@ A new setting is one entry in the description, its texts in the translations, an
 
 The workflow (`.github/workflows/msvc.yml`) builds all six Release configurations and uploads the six ZIPs as artifacts; a run started with *release* publishes them as a GitHub release (ZIPs only). It needs these repository (or organization) secrets:
 
-- `HUB_RELEASE_TOKEN`: a read-only token for the releases of the private `ThirteenAG/FusionFixHub-App` repository (fine-grained, contents: read). Each package ships the latest signed `FusionFixHub.exe`; a release run fails without it, other runs build without the hub.
 - `CODE_SIGNING_PFX` and `CODE_SIGNING_PASSWORD`: sign the plugins on `main`.
 
 The settings descriptions are published to fusionfix.io with the run's GitHub Actions OIDC token (no secret).

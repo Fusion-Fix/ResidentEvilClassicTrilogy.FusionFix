@@ -27,7 +27,7 @@ Improvements for the original **Resident Evil**, **Resident Evil 2**, and **Resi
 3. Launch the game normally. Press **Esc** or controller **Start** to open Fusion Fix.
 4. Widescreen, alternate controls and mouse steering are on by default; the **Vanilla** preset restores the original 4:3 presentation and tank controls.
 
-The loader and FusionFixHub are included. The plugin lives in `plugins/` beside the executable and writes its settings file (`RE1Classic.FusionFix.cfg`, `RE2Classic.FusionFix.cfg` or `RE3Nemesis.FusionFix.cfg`) there on the first start; Steam archives place them inside each language folder. RE2's Leon and Claire share one plugin. Updates keep the settings file. Settings files of older versions (`.ini`) are no longer read: choose those settings again in the menu.
+The loader is included; FusionFixHub comes with the downloads on [fusionfix.io](https://fusionfix.io). The plugin lives in `plugins/` beside the executable and writes its settings file (`RE1Classic.FusionFix.cfg`, `RE2Classic.FusionFix.cfg` or `RE3Nemesis.FusionFix.cfg`) there on the first start; Steam archives place them inside each language folder. RE2's Leon and Claire share one plugin. Updates keep the settings file. Settings files of older versions (`.ini`) are no longer read: choose those settings again in the menu.
 
 ## Features
 
@@ -99,7 +99,7 @@ Press **Esc** or controller **Start** to pause. Each game has its own menu styli
 
 Function-key toggles apply to the current session. Use the menu or the settings file to save your preference.
 
-**Settings overlay and FusionFixHub:** press **Ctrl+F10** (or **Back + Start** on a controller) for the settings overlay, which lists every setting, including the advanced ones, and pauses the game while it is open. `FusionFixHub.exe` beside the game executable edits the same settings, also while the game runs.
+**Settings overlay and FusionFixHub:** press **Ctrl+F10** (or **Back + Start** on a controller) for the settings overlay, which lists every setting, including the advanced ones, and pauses the game while it is open. FusionFixHub (from fusionfix.io) edits the same settings, also while the game runs.
 
 ### Less waiting between rooms
 

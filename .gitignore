@@ -217,7 +217,6 @@ node_modules/
 
 # Output artifact
 ResidentEvilClassicTrilogy.FusionFix.zip
-FusionFixHub.exe
 data/plugins/ResidentEvilClassicTrilogy.FusionFix.asi
 data/**/*.asi
 data/**/*.dll

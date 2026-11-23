@@ -12,10 +12,7 @@ $loader = Join-Path $PSScriptRoot 'data/version.dll'
 foreach ($file in @($plugin, $loader)) {
     if (!(Test-Path -LiteralPath $file -PathType Leaf)) { throw "Missing package input: $file" }
 }
-# FusionFixHub.exe (repository root, downloaded by CI) goes next to the game's executable when present.
 # The plugin writes its settings file with the defaults on the first start; the package has none.
-$hub = Join-Path $PSScriptRoot 'FusionFixHub.exe'
-if (!(Test-Path -LiteralPath $hub -PathType Leaf)) { $hub = $null }
 $loaderName = if ($Store -eq 'Steam') { 'version.dll' } else { 'dsound.dll' }
 $staging = Join-Path $PSScriptRoot ("build/packages/$Game-$Store-" + [guid]::NewGuid())
 $destinations = if ($Store -eq 'Steam') {
@@ -26,7 +23,6 @@ foreach ($destination in $destinations) {
     New-Item -ItemType Directory -Force -Path $pluginDirectory | Out-Null
     Copy-Item -LiteralPath $loader -Destination (Join-Path $destination $loaderName)
     Copy-Item -LiteralPath $plugin -Destination $pluginDirectory
-    if ($hub) { Copy-Item -LiteralPath $hub -Destination $destination }
     # Developer builds: an empty CrashDumps folder next to the loader makes it write crash dumps there
     if ($env:WFP_CRASH_DUMPS -eq 'on') { New-Item -ItemType Directory -Force -Path (Join-Path $destination 'CrashDumps') | Out-Null }
 }

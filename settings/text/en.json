@@ -43,9 +43,7 @@
   "latest": "Latest",
   "portable": "Portable settings",
   "portable.description": "Save native settings beside the game. Restart the game to apply this change.",
-  "overlayhotkey": "Overlay hotkey",
-  "overlayhotkey.description": "Opens the in-game settings overlay (Ctrl held with the key). Back + Start on a controller also opens it.",
-  "textlanguage": "Overlay text language",
-  "textlanguage.description": "Language of the settings overlay. Auto follows the game's language.",
+  "textlanguage": "Text language",
+  "textlanguage.description": "Language of the fix's texts in the game's menu. Auto follows the game's language.",
   "textlanguage.auto": "Game language"
 }

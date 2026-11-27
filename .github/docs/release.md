@@ -99,7 +99,7 @@ Press **Esc** or controller **Start** to pause. Each game has its own menu styli
 
 Function-key toggles apply to the current session. Use the menu or the settings file to save your preference.
 
-**Settings overlay and FusionFixHub:** press **Ctrl+F10** (or **Back + Start** on a controller) for the settings overlay, which lists every setting, including the advanced ones, and pauses the game while it is open. FusionFixHub (from fusionfix.io) edits the same settings, also while the game runs.
+**FusionFixHub:** FusionFixHub (from fusionfix.io) edits every setting, including the advanced ones, also while the game runs.
 
 ### Less waiting between rooms
 
@@ -130,7 +130,7 @@ This makes settings and save paths portable; Steam still requires its normal cli
 
 ## Settings
 
-Use the in-game menu, the settings overlay, FusionFixHub, or edit the settings file (`.cfg`) in `plugins/`. The defaults (the Recommended preset) turn on widescreen, alternate controls with Remaster bindings, mouse steering and auto push, skip intros and doors, and enable RE3's wobble fix.
+Use the in-game menu, FusionFixHub, or edit the settings file (`.cfg`) in `plugins/`. The defaults (the Recommended preset) turn on widescreen, alternate controls with Remaster bindings, mouse steering and auto push, skip intros and doors, and enable RE3's wobble fix.
 
 | Preset | Widescreen | Alternate controls | Remaster bindings | Mouse steering | Auto push | Wobble fix (RE3) | Skip intro | Skip doors | Fast load |
 |:--|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|
@@ -160,8 +160,7 @@ Presets change only these settings; aspect limit, pace, Shift behavior, mouse se
 | `AutoLoad` | `0` | Load the selected save on startup |
 | `LoadSlot` | `0` | Select Latest or a native save entry; see below |
 | `PortableMode` | `1` | RE1/RE2 only: System → Portable settings; keep native settings in an INI; restart after changing |
-| `OverlayHotkey` | `121` | Key held with Ctrl that opens the settings overlay (121 = F10) |
-| `TextLanguage` | `auto` | Language of the settings overlay; `auto` follows the game |
+| `TextLanguage` | `auto` | Language of the fix's texts in the game's menu; `auto` follows the game |
 | `WobbleFix` | `1` | RE3 only: stabilize model geometry |
 
 For alternate keyboard controls, choose **Default pace: Walk / Run** and **Shift behavior: Hold / Toggle** in the Controls menu. Shift selects the opposite pace: hold it temporarily, or press it to toggle. These settings do not change the controller's walking/running behavior.

@@ -1,4 +1,5 @@
 #include <common.hxx>
+#ifdef ASI_OVERLAY
 #include <safetyhook.hpp>
 #include <Xinput.h>
 #include <overlay/OverlayD3D9.hpp>
@@ -72,8 +73,6 @@ namespace
 
     void Frame(IDirect3DDevice9* device)
     {
-        const int hotkey = FixSettings::Plugin().Int("MAIN.OverlayHotkey");
-        overlay.hotkey = hotkey ? hotkey : VK_F10;
         PollPad();
         overlay.Present(device, host);
         const bool now = overlay.BlocksInput();
@@ -197,3 +196,4 @@ namespace FixOverlay
         listeners.push_back(std::move(callback));
     }
 }
+#endif

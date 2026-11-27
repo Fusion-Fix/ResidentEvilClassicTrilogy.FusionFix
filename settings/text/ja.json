@@ -43,9 +43,7 @@
   "latest": "さいしん",
   "portable": "せっていほぞん",
   "portable.description": "ゲームのそばにせっていをほぞんゲームのさいきどうでてきよう",
-  "overlayhotkey": "オーバーレイのキー",
-  "overlayhotkey.description": "ゲーム内の設定オーバーレイを開きます（Ctrlを押しながら）。コントローラーのBack + Startでも開きます。",
-  "textlanguage": "オーバーレイの言語",
-  "textlanguage.description": "設定オーバーレイの言語。Autoはゲームの言語に従います。",
+  "textlanguage": "テキストの言語",
+  "textlanguage.description": "ゲームのメニューに表示される修正のテキストの言語。Autoはゲームの言語に従います。",
   "textlanguage.auto": "ゲームの言語"
 }

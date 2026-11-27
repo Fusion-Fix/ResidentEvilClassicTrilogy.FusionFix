@@ -43,9 +43,7 @@
   "latest": "Neuester",
   "portable": "Portable Optionen",
   "portable.description": "Native Optionen neben dem Spiel speichern. Zum Übernehmen das Spiel neu starten.",
-  "overlayhotkey": "Overlay-Taste",
-  "overlayhotkey.description": "Öffnet das Einstellungs-Overlay im Spiel (mit gedrückter Strg-Taste). Back + Start am Controller öffnet es ebenfalls.",
-  "textlanguage": "Overlay-Sprache",
-  "textlanguage.description": "Sprache des Einstellungs-Overlays. Auto folgt der Sprache des Spiels.",
+  "textlanguage": "Textsprache",
+  "textlanguage.description": "Sprache der Texte des Fixes im Menü des Spiels. Auto folgt der Sprache des Spiels.",
   "textlanguage.auto": "Spielsprache"
 }

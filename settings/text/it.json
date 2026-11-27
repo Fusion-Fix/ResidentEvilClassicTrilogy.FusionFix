@@ -43,9 +43,7 @@
   "latest": "Recente",
   "portable": "Opzioni portatili",
   "portable.description": "Salva le opzioni accanto al gioco. Riavvia il gioco per applicare la modifica.",
-  "overlayhotkey": "Tasto dell’overlay",
-  "overlayhotkey.description": "Apre l’overlay delle impostazioni nel gioco (tenendo premuto Ctrl). Anche Back + Start sul controller lo apre.",
-  "textlanguage": "Lingua dell’overlay",
-  "textlanguage.description": "Lingua dell’overlay delle impostazioni. Auto segue la lingua del gioco.",
+  "textlanguage": "Lingua dei testi",
+  "textlanguage.description": "Lingua dei testi del fix nel menu del gioco. Auto segue la lingua del gioco.",
   "textlanguage.auto": "Lingua del gioco"
 }

@@ -135,11 +135,17 @@ project (game.project)
    -- Shared headers, ASI Settings and the overlay: FusionFixUtils, a submodule (change them there)
    includedirs { "external/FusionFixUtils/include", "external/FusionFixUtils" }
    files { "source/*.hxx", "source/*.ixx", "source/*.hpp", "source/*.cpp", "external/FusionFixUtils/include/callbacks.h", "external/FusionFixUtils/include/gameref.hpp", "external/FusionFixUtils/include/ModuleList.hpp" }
-   -- The settings overlay of FusionFixUtils; ImGui is the imgui submodule of FusionFixUtils
+   -- The settings overlay of FusionFixUtils (developer menu), Debug builds only; ImGui is the imgui submodule of
+   -- FusionFixUtils. Release builds compile the overlay headers to empty stubs and have no ImGui.
    includedirs { "external/FusionFixUtils/imgui" }
    files { "external/FusionFixUtils/overlay/*.hpp", "external/FusionFixUtils/imgui/*.h" }
-   files { "external/FusionFixUtils/imgui/imgui.cpp", "external/FusionFixUtils/imgui/imgui_draw.cpp", "external/FusionFixUtils/imgui/imgui_tables.cpp", "external/FusionFixUtils/imgui/imgui_widgets.cpp" }
-   files { "external/FusionFixUtils/imgui/backends/imgui_impl_win32.cpp", "external/FusionFixUtils/imgui/backends/imgui_impl_dx9.cpp" }
+   filter "configurations:*-Debug"
+      defines { "ASI_OVERLAY" }
+      files { "external/FusionFixUtils/imgui/imgui.cpp", "external/FusionFixUtils/imgui/imgui_draw.cpp", "external/FusionFixUtils/imgui/imgui_tables.cpp", "external/FusionFixUtils/imgui/imgui_widgets.cpp" }
+      files { "external/FusionFixUtils/imgui/backends/imgui_impl_win32.cpp", "external/FusionFixUtils/imgui/backends/imgui_impl_dx9.cpp" }
+   filter { "configurations:*-Release", "files:external/FusionFixUtils/imgui/**" }
+      excludefrombuild "On"
+   filter {}
    files { "source/" .. game.id .. "/**.cpp", "source/" .. game.id .. "/**.ixx", "source/" .. game.id .. "/**.hxx" }
    includedirs { "source/" .. game.id }
    files { "source/resources/Versioninfo.rc" }
